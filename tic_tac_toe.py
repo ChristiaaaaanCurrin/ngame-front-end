@@ -95,6 +95,7 @@ class TicTacToe(GameState):
 
 test_game = TicTacToe()
 test_game.make_move((0, 0))
-test_game.make_move((0, 2))
-test_game.history = []
+test_game.make_move((1, 0))
+test_game.make_move((0, 1))
+
 print(test_game.n_max(9))

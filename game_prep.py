@@ -28,6 +28,7 @@ class GameState:
 
         move_tree = [self.legal_moves()]
         value_tree = [[]]
+        max_depth = depth
         while True:
             player_to_maximize = self.player_to_move
             if depth != 0 and move_tree[-1]:
@@ -46,7 +47,8 @@ class GameState:
                 else:
                     value_tree[-1].append(self.utility())
 
-                if self.revert():
+                if depth != max_depth:
+                    self.revert()
                     depth = depth + 1
                     move_tree.pop(-1)
                     value_tree[-2].append(best_move_utility(player_to_maximize, value_tree.pop(-1)))
