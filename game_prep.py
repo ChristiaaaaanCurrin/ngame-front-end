@@ -28,36 +28,31 @@ class GameState:
 
         move_tree = [self.legal_moves()]
         value_tree = [[]]
-        player_to_maximize = self.player_to_move
-
         while True:
+            player_to_maximize = self.player_to_move
             if depth != 0 and move_tree[-1]:
-                player_to_maximize = self.player_to_move
                 move = move_tree[-1].pop(0)
 
                 self.make_move(move)
 
-                move_tree.append(self.legal_moves())
                 value_tree.append([])
+                move_tree.append(self.legal_moves())
                 depth = depth - 1
                 continue
 
             else:
-                print('STOPPED')
-                print(depth)
                 if self.legal_moves() and depth != 0:
-                    value_tree[-2].append(best_move_utility(player_to_maximize, value_tree.pop(-1)))
+                    pass
                 else:
                     value_tree[-1].append(self.utility())
 
                 if self.revert():
-                    print('REVERTED')
-                    print(self)
                     depth = depth + 1
                     move_tree.pop(-1)
+                    value_tree[-2].append(best_move_utility(player_to_maximize, value_tree.pop(-1)))
                     continue
                 else:
-                    print('BROKEN')
+                    value_tree[-1] = best_move_utility(self.player_to_move, value_tree[-1])
                     break
 
         return value_tree

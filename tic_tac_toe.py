@@ -86,13 +86,15 @@ class TicTacToe(GameState):
             if self.win(player):
                 utility[player] = 1
                 win = True
-
-            elif not win:
-                for player in self.players:
-                    utility[player] = 0.5
+        if not win:
+            for player in self.players:
+                utility[player] = 0.5
 
         return utility
 
 
 test_game = TicTacToe()
-test_game.n_max(9)
+test_game.make_move((0, 0))
+test_game.make_move((0, 2))
+test_game.history = []
+print(test_game.n_max(9))
