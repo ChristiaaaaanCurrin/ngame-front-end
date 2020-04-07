@@ -18,6 +18,9 @@ class GameState:
     def neural_net_input(self):
         pass
 
+    def randomize_position(self):
+        pass
+
     def n_max(self, depth):
         def best_move_utility(player, utilities):
             current_max = utilities[0]
@@ -58,3 +61,10 @@ class GameState:
                     break
 
         return value_tree
+
+    def neural_net_training_data(self, n_max_depth, batch_size):
+        training_data = []
+        for i in range(batch_size):
+            self.randomize_position()
+            training_data.append((self.neural_net_input(), [self.n_max(n_max_depth)[player] for player in self.players]))
+        return training_data

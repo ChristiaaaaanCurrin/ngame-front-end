@@ -35,6 +35,10 @@ class TicTacToe(GameState):
             + ' ' + str(self.pieces)\
             + ', ' + str(self.player_to_move) + ' to move'
 
+    def randomize_position(self):
+        for player in self.players:
+            self.pieces[player] = []
+
     def win(self, player):
         win = False
         w = self.win_condition
@@ -79,18 +83,28 @@ class TicTacToe(GameState):
     def utility(self):
         utility = {}
         win = False
-        for player in self.players:
-            utility[player] = 0
 
         for player in self.players:
             if self.win(player):
                 utility[player] = 1
                 win = True
+            else:
+                utility[player] = 0
+
         if not win:
             for player in self.players:
                 utility[player] = 0.5
 
         return utility
+
+    def neural_net_input(self):
+        out = []
+        for player in self.players:
+            for tile in self.board:
+                if tile in self.pieces[player]:
+                    out.append(1)
+                else:
+                    out.append(0)
 
 
 test_game = TicTacToe()
