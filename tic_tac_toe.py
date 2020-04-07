@@ -37,13 +37,21 @@ class TicTacToe(GameState):
                + ', ' + str(self.player_to_move) + ' to move'
 
     def randomize_position(self):
-        for player in self.players:
-            self.pieces[player] = []
+        while True:
+            for player in self.players:
+                self.pieces[player] = []
 
-        for tile in self.board:
-            seed = random.randint(0, len(self.players))
-            if seed != 0:
-                self.pieces[self.players[seed]].append(tile)
+            for tile in self.board:
+                seed = random.randint(0, len(self.players))
+                if seed != 0:
+                    self.pieces[self.players[seed - 1]].append(tile)
+
+            for player in self.players:
+                if self.win(player):
+                    break
+            else:
+                break
+        self.player_to_move = self.players[random.randint(0, len(self.players)-1)]
 
     def win(self, player):
         win = False
@@ -120,8 +128,11 @@ class TicTacToe(GameState):
 
 
 test_game = TicTacToe()
-test_game.make_move((0, 0))
-test_game.make_move((1, 0))
-test_game.make_move((0, 1))
-
+test_game.randomize_position()
+print(test_game)
+print(test_game.player_to_move)
+for player in test_game.players:
+    print(test_game.win(player))
 print(test_game.n_max(9))
+
+

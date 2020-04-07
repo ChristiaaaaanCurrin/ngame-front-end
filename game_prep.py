@@ -64,6 +64,7 @@ class GameState:
         depth = 0  # start at depth 0
 
         while True:
+            #print(move_tree)
             # Starting from a new position
             player_to_maximize = self.player_to_move
 
@@ -75,11 +76,11 @@ class GameState:
                 utility_tree.append([])  # tack on an empty list for utilities
                 move_tree.append(self.legal_moves())  # every legal move from the new game state is a new branch
                 depth = depth + 1  # record the change in depth
-                continue
+                continue  # rerun loop from new game state
 
             # Nowhere to go down? Go up.
             else:
-                if not (self.legal_moves() or depth != max_depth):  # only need to grab utility from bottom of the tree
+                if not self.legal_moves() or depth != max_depth:  # only need to grab utility from bottom of the tree
                     utility_tree[-1].append(self.utility())  # add utility to the list of the parent
 
                 # If you're not at the top, you can go up
@@ -90,13 +91,12 @@ class GameState:
                     utility_tree[-2].append(dictionary_max(player_to_maximize, utility_tree.pop(-1)))
                     move_tree.pop(-1)  # cut the explored branch from the tree
                     depth = depth - 1  # record change in depth
-                    continue
+                    continue  # rerun loop from new game state
                 # Can't go down or up? Must be done.
                 else:
                     # utility of the position is the best child utility for the player to move
                     utility_tree[-1] = dictionary_max(player_to_maximize, utility_tree[-1])
                     break
-
         return utility_tree  # don't forget why you came here
 
     def neural_net_training_data(self, n_max_depth, batch_size):
@@ -118,15 +118,15 @@ class GameState:
 
 # Static Methods
 
-def dictionary_max(key, dictsionaries):
+def dictionary_max(key, dictionaries):
     """
 
     :param key: a key in the dictionary
-    :param dictsionaries: list of dictionaries with the same keys, dictionary entries must be ordered (<,> defined)
-    :return: the dictionary where the value of dict[key] is maximized
+    :param dictionaries: list of dictionaries with the same keys, dictionary entries must be ordered (<,> defined)
+    :return: the dictionary where the value of dictionary[key] is maximized
     """
-    current_max = dictsionaries[0]
-    for dictionary in dictsionaries:
+    current_max = dictionaries[0]
+    for dictionary in dictionaries:
         if dictionary[key] > current_max[key]:
             current_max = dictionary
     return current_max
