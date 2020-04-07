@@ -99,6 +99,13 @@ class TicTacToe(GameState):
 
     def neural_net_input(self):
         out = []
+        
+        for player in self.players:
+            if player == self.player_to_move:
+                out.append(1)
+            else:
+                out.append(0)
+
         for player in self.players:
             for tile in self.board:
                 if tile in self.pieces[player]:
