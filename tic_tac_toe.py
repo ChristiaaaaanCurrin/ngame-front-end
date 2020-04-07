@@ -1,5 +1,6 @@
 from game_prep import GameState
 from neural_net import Network
+import random
 
 
 class TicTacToe(GameState):
@@ -29,15 +30,20 @@ class TicTacToe(GameState):
             self.history = history
 
     def __str__(self):
-        return 'tic tac toe '\
-            + str(self.rows)\
-            + 'X' + str(self.columns)\
-            + ' ' + str(self.pieces)\
-            + ', ' + str(self.player_to_move) + ' to move'
+        return 'tic tac toe ' \
+               + str(self.rows) \
+               + 'X' + str(self.columns) \
+               + ' ' + str(self.pieces) \
+               + ', ' + str(self.player_to_move) + ' to move'
 
     def randomize_position(self):
         for player in self.players:
             self.pieces[player] = []
+
+        for tile in self.board:
+            seed = random.randint(0, len(self.players))
+            if seed != 0:
+                self.pieces[self.players[seed]].append(tile)
 
     def win(self, player):
         win = False
@@ -54,7 +60,6 @@ class TicTacToe(GameState):
 
                 if all(map(lambda x: x in pieces, [tuple(map(sum, zip(piece, (m, m)))) for m in range(w)])):
                     win = True
-
         return win
 
     def legal_moves(self):
@@ -99,7 +104,7 @@ class TicTacToe(GameState):
 
     def neural_net_input(self):
         out = []
-        
+
         for player in self.players:
             if player == self.player_to_move:
                 out.append(1)
