@@ -36,23 +36,6 @@ class TicTacToe(GameState):
                + ' ' + str(self.pieces) \
                + ', ' + str(self.player_to_move) + ' to move'
 
-    def randomize_position(self):
-        while True:
-            for player in self.players:
-                self.pieces[player] = []
-
-            for tile in self.board:
-                seed = random.randint(0, len(self.players))
-                if seed != 0:
-                    self.pieces[self.players[seed - 1]].append(tile)
-
-            for player in self.players:
-                if self.win(player):
-                    break
-            else:
-                break
-        self.player_to_move = self.players[random.randint(0, len(self.players)-1)]
-
     def win(self, player):
         win = False
         w = self.win_condition
@@ -69,6 +52,23 @@ class TicTacToe(GameState):
                 if all(map(lambda x: x in pieces, [tuple(map(sum, zip(piece, (m, m)))) for m in range(w)])):
                     win = True
         return win
+
+    def randomize_position(self):
+        while True:
+            for player in self.players:
+                self.pieces[player] = []
+
+            for tile in self.board:
+                seed = random.randint(0, len(self.players))
+                if seed != 0:
+                    self.pieces[self.players[seed - 1]].append(tile)
+
+            for player in self.players:
+                if self.win(player):
+                    break
+            else:
+                break
+        self.player_to_move = self.players[random.randint(0, len(self.players)-1)]
 
     def legal_moves(self):
         legal = []
