@@ -80,7 +80,7 @@ class GameState:
 
             # Nowhere to go down? Go up.
             else:
-                if not self.legal_moves() or depth != max_depth:  # only need to grab utility from bottom of the tree
+                if (not self.legal_moves()) or (depth == max_depth):  # only need to grab utility from bottom of the tree
                     utility_tree[-1].append(self.utility())  # add utility to the list of the parent
 
                 # If you're not at the top, you can go up
@@ -95,9 +95,9 @@ class GameState:
                 # Can't go down or up? Must be done.
                 else:
                     # utility of the position is the best child utility for the player to move
-                    utility_tree[-1] = dictionary_max(player_to_maximize, utility_tree[-1])
+                    n_max_utility = dictionary_max(player_to_maximize, utility_tree[-1])
                     break
-        return utility_tree  # don't forget why you came here
+        return n_max_utility  # don't forget why you came here
 
     def neural_net_training_data(self, n_max_depth, batch_size):
         """
@@ -111,8 +111,10 @@ class GameState:
         training_data = []
         for i in range(batch_size):
             self.randomize_position()  # create random position
-            training_data.append((self.neural_net_input(),  # generate input
-                                 [self.n_max(n_max_depth)[player] for player in self.players]))  # generate output
+            neural_net_output = []
+            for player in self.players:
+                neural_net_output.append(self.n_max(n_max_depth)[player])  # generate output based on n_max function
+            training_data.append((self.neural_net_input(), neural_net_output))  # add input and output to training data
         return training_data  # don't forget to return
 
 

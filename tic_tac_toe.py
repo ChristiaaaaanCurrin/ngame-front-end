@@ -126,13 +126,13 @@ class TicTacToe(GameState):
                 else:
                     out.append(0)
 
+        return out
+
 
 test_game = TicTacToe()
-test_game.randomize_position()
-print(test_game)
-print(test_game.player_to_move)
-for player in test_game.players:
-    print(test_game.win(player))
-print(test_game.n_max(9))
 
+test_training_data = test_game.neural_net_training_data(3, 1000)
 
+test_network = Network([len(test_game.neural_net_input()), 10, 10, 10, 10, len(test_game.utility())])
+
+# test_network.SGD(test_training_data, 3, 100, 1)
