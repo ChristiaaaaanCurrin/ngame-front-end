@@ -129,10 +129,11 @@ class TicTacToe(GameState):
         return out
 
 
-test_game = TicTacToe()
+if __name__ == "__main__":
+    test_game = TicTacToe()
 
-test_training_data = test_game.neural_net_training_data(3, 1000)
+    test_training_data = test_game.neural_net_training_data(3, 1000)
 
-test_network = Network([len(test_game.neural_net_input()), 10, 10, 10, 10, len(test_game.utility())])
+    test_network = Network([len(test_game.neural_net_input()), 10, 10, 10, 10, len(test_game.utility())])
 
-# test_network.SGD(test_training_data, 3, 100, 1)
+    # test_network.SGD(test_training_data, 3, 100, 1)
