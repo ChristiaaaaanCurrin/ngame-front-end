@@ -1,4 +1,7 @@
-class GameState:
+from abc import ABC, abstractmethod
+
+
+class GameState(ABC):
     def __init__(self, players, player_to_move):
         """
         Initiates a "snapshot' of a board game. Includes who's turn it is, where the pieces are, etc.
@@ -8,6 +11,7 @@ class GameState:
         self.players = players
         self.player_to_move = players[player_to_move]
 
+    @abstractmethod
     def utility(self):
         """
         :return: dictionary of values keyed by players, the values reflect how 'good' the GameState is for each player
@@ -16,6 +20,7 @@ class GameState:
         """
         pass
 
+    @abstractmethod
     def make_move(self, move):
         """
         changes the GameState as specified by 'move'
@@ -23,6 +28,7 @@ class GameState:
         """
         pass
 
+    @abstractmethod
     def revert(self):
         """
         undoes the last move made to the GameState
@@ -30,6 +36,7 @@ class GameState:
         """
         pass
 
+    @abstractmethod
     def legal_moves(self):
         """
         :return: list of legal moves available to 'player_to_move'
@@ -37,12 +44,14 @@ class GameState:
         """
         pass
 
+    @abstractmethod
     def neural_net_input(self):
         """
         :return: list of values
         """
         pass
 
+    @abstractmethod
     def randomize_position(self):
         """
         randomizes all attributes of the game state that can vary during the course of a game

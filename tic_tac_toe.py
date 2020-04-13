@@ -136,4 +136,4 @@ if __name__ == "__main__":
 
     test_network = Network([len(test_game.neural_net_input()), 10, 10, 10, 10, len(test_game.utility())])
 
-    # test_network.SGD(test_training_data, 3, 100, 1)
+    test_network.SGD(test_training_data, 3, 100, 1)
