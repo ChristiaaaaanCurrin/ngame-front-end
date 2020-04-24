@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import numpy as np
 
 
 class GameState(ABC):
@@ -73,7 +74,7 @@ class GameState(ABC):
         depth = 0  # start at depth 0
 
         while True:
-            #print(move_tree)
+            # print(move_tree)
             # Starting from a new position
             player_to_maximize = self.player_to_move
 
@@ -123,7 +124,7 @@ class GameState(ABC):
             neural_net_output = []
             for player in self.players:
                 neural_net_output.append(self.n_max(n_max_depth)[player])  # generate output based on n_max function
-            training_data.append((self.neural_net_input(), neural_net_output))  # add input and output to training data
+            training_data.append((np.asarray(self.neural_net_input()), np.asarray(neural_net_output)))
         return training_data  # don't forget to return
 
 

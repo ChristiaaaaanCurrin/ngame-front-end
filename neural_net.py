@@ -15,7 +15,8 @@ import random
 # Third-party libraries
 import numpy as np
 
-class Network(object):
+
+class VanillaNetwork(object):
 
     def __init__(self, sizes):
         """The list ``sizes`` contains the number of neurons in the
