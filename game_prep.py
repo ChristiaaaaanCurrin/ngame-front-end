@@ -19,16 +19,6 @@ class SimplePlayer(Player):
         return self.next
 
 
-class Piece(ABC):
-    def __init__(self, player, location):
-        self.player = player
-        self.location = location
-
-    @abstractmethod
-    def legal_moves(self, game_state):
-        pass
-
-
 class GameState(ABC):
     def __init__(self, players, player_to_move):
         """
