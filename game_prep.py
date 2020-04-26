@@ -2,6 +2,33 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 
+class Player(ABC):
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def turn(self):
+        pass
+
+
+class SimplePlayer(Player):
+    def __init__(self, successor):
+        self.next = successor
+
+    def turn(self):
+        return self.next
+
+
+class Piece(ABC):
+    def __init__(self, player, location):
+        self.player = player
+        self.location = location
+
+    @abstractmethod
+    def legal_moves(self, game_state):
+        pass
+
+
 class GameState(ABC):
     def __init__(self, players, player_to_move):
         """
@@ -142,3 +169,12 @@ def dictionary_max(key, dictionaries):
         if dictionary[key] > current_max[key]:
             current_max = dictionary
     return current_max
+
+
+def simple_players_from_integer(number_of_players):
+    players = [SimplePlayer(None)]
+    for n in range(number_of_players):
+        players.append(SimplePlayer(players[n]))
+    players[0].next = players[-1]
+    return players
+
