@@ -3,13 +3,48 @@ from game_prep import GameState
 
 
 class Piece(ABC):
-    def __init__(self, player, location):
+    def __init__(self, game_state, player, location):
         self.player = player
         self.location = location
+        self.game_state = game_state
 
     @abstractmethod
     def legal_moves(self, game_state):
+        """
+        :param game_state: game that the piece is in
+        :return: what actions ("moves") the piece can legally make
+        """
         pass
+
+
+class PatternMovePiece(Piece, ABC):
+    def __init__(self, player, location, capture_with_move=True, blocked=True, friendly_fire=False):
+        super().__init__(player, location)
+        self.capture_with_move = capture_with_move
+        self.blocked = blocked
+        self.friendly_fire = friendly_fire
+
+    @abstractmethod
+    def legal_move_steps(self):
+        """
+        :return: list of functions giving closest legal moves (one step in the pattern for pattern move)
+        """
+        pass
+
+    def legal_moves(self):
+        legal = []
+        for legal_move_step in self.legal_move_steps():
+            edge = legal_move_step(self)
+            while edge:
+                new_edge = []
+                for move in edge:
+                    if move not in legal:
+                        legal.append(move)
+                        for piece in move.pieces_to_add:
+                            for next_move in legal_move_step(piece):
+                                new_edge.append(next_move)
+                edge = new_edge
+        return legal
 
 
 class PieceMove:
@@ -21,7 +56,9 @@ class PieceMove:
 class PieceGameState(GameState, ABC):
     def __init__(self, players, player_to_move, pieces, history=None):
         super().__init__(players, player_to_move)
+
         self.pieces = pieces
+
         if history:
             self.history = history
         else:
