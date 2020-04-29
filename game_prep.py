@@ -3,17 +3,18 @@ import numpy as np
 
 
 class Player(ABC):
-    def __init__(self):
-        pass
-
     @abstractmethod
     def turn(self):
         pass
 
 
 class SimplePlayer(Player):
-    def __init__(self, successor):
+    def __init__(self, successor, tag):
         self.next = successor
+        self.tag = tag
+
+    def __repr__(self):
+        return 'p' + str(self.tag)
 
     def turn(self):
         return self.next
@@ -27,7 +28,10 @@ class GameState(ABC):
         :param player_to_move: player whose turn it currently is
         """
         self.players = players
-        self.player_to_move = players[player_to_move]
+        if player_to_move:
+            self.player_to_move = player_to_move
+        else:
+            self.player_to_move = players[0]
 
     @abstractmethod
     def utility(self):
@@ -162,9 +166,9 @@ def dictionary_max(key, dictionaries):
 
 
 def simple_players_from_integer(number_of_players):
-    players = [SimplePlayer(None)]
+    players = [SimplePlayer(None, number_of_players+1)]
     for n in range(number_of_players):
-        players.append(SimplePlayer(players[n]))
+        players.append(SimplePlayer(players[n], number_of_players-n))
     players[0].next = players[-1]
+    players.reverse()
     return players
-
