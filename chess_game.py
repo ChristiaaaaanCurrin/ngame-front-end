@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from piece_game import PieceGameState
+from game_prep import PlayerStatus
 
 
 class ChessGameState(PieceGameState, ABC):
@@ -9,7 +10,7 @@ class ChessGameState(PieceGameState, ABC):
     loose the game and receive a score of 0. the remaining 1 point is divided evenly among players that have not lost
     by the end of the game.
     """
-    def __init__(self, players, player_to_move, history=None):
+    def __init__(self, players, player_to_move, history=None, stalemate_consequence=DRAW):
         super().__init__(players=players, player_to_move=player_to_move, history=history)
 
         self.kings = []
@@ -29,12 +30,11 @@ class ChessGameState(PieceGameState, ABC):
 
     def legal_moves(self):
         legal = []
-        for piece in self.pieces(self.player_to_move):
-            for move in piece.legal_moves():
-                self.make_move(move)
-                if not self.in_check(piece.player):
-                    legal.append(move)
-                self.revert()
+        for move in self.piece_legal_moves():
+            self.make_move(move)
+            if not self.in_check(move.piece.player):
+                legal.append(move)
+            self.revert()
         return legal
 
     def score(self):

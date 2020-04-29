@@ -39,6 +39,7 @@ class PolarChessGameState(ChessGameState, PieceGameState):
 
 class PolarChessTile(Location):
     def __init__(self, ring_sizes, r_coord, t_coord):
+        super().__init__(ring_sizes, r_coord, t_coord)
         self.ring_sizes = ring_sizes
         self.r_coord = r_coord
         self.t_coord = t_coord
@@ -110,4 +111,3 @@ if __name__ == '__main__':
     print(test_game.legal_moves())
     test_game.make_move(test_game.legal_moves()[1])
     print(test_game)
-

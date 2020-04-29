@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+from enum import Enum
 
 
 class Player(ABC):
@@ -18,6 +19,42 @@ class SimplePlayer(Player):
 
     def turn(self):
         return self.next
+
+
+class PlayerStatus(Enum):
+    LOOSE = 0
+    WIN = 1
+    DRAW = 2
+    CONTINUE = 3
+
+
+class Move(ABC):
+    """
+    A move contains enough information to modify the GameState and undo itself
+    """
+    @abstractmethod
+    def anti_move(self):
+        """
+        :return: a Move that carries instructions to undo self
+        """
+        pass
+
+
+class Pass(Move):
+    """
+    A Pass is a Move that does nothing
+    """
+    def __eq__(self, other):
+        """
+        all passes are the same
+        """
+        return type(self) == type(other)
+
+    def anti_move(self):
+        """
+        To undo nothing, do nothing again
+        """
+        return self
 
 
 class GameState(ABC):

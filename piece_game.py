@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from game_prep import GameState
+from game_prep import GameState, Move, Pass
 
 
 class PieceGameState(GameState, ABC):
@@ -45,12 +45,15 @@ class PieceGameState(GameState, ABC):
             pieces = self.all_pieces
         return pieces
 
-    def legal_moves(self):
+    def piece_legal_moves(self):
         legal = []
         for piece in self.pieces(self.player_to_move):
             for move in piece.legal_moves(self):
                 legal.append(move)
         return legal
+
+    def legal_moves(self):
+        return self.piece_legal_moves()
 
     def execute_move(self, piece_move):
         piece_move.piece.location = piece_move.new_location
@@ -62,13 +65,16 @@ class PieceGameState(GameState, ABC):
         elif piece_move.new_location:
             self.all_pieces.append(piece_move.piece)
 
+    def index_turn(self):
+        self.player_to_move = self.player_to_move.turn()
+
     def make_move(self, move):
         revert_move = []
         for piece_move in move:
             revert_move.append(piece_move.anti_move())
             self.execute_move(piece_move)
         self.history.append((self.player_to_move, revert_move))
-        self.player_to_move = self.player_to_move.turn()
+        self.index_turn()
 
     def revert(self):
         if self.history:
@@ -112,7 +118,7 @@ class Location(ABC):
         return str(self.coords)
 
 
-class PieceMoveAddRemove:
+class PieceMoveAddRemove(Move):
     """
     A PieceMoveAddRemove carries the information required to change a piece based on a move.
     PieceMoveAddRemove is the output of Piece.legal_moves and the input of PieceGameState.execute_move.
