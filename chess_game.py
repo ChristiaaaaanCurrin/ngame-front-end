@@ -1,20 +1,19 @@
 from abc import ABC, abstractmethod
-from piece_game import PieceGameState, Piece
+from piece_game import PieceGameState
 
 
 class ChessGameState(PieceGameState, ABC):
-    def __init__(self, players, player_to_move, history):
-        super().__init__(players, player_to_move, history)
+    """
+    A ChessGame is a game where players cannot move so that their king is attacked. When a player's king is attacked,
+    that player is in check. A player is in checkmate if the player is in check and cannot move. Players in checkmate
+    loose the game and receive a score of 0. the remaining 1 point is divided evenly among players that have not lost
+    by the end of the game.
+    """
+    def __init__(self, players, player_to_move, history=None):
+        super().__init__(players=players, player_to_move=player_to_move, history=history)
 
         self.kings = []
-
-        self.piece_types = []
-
-    def set_board(self, pieces):
-        for piece in pieces:
-            self.all_pieces.append(piece)
-            if piece not in self.piece_types:
-                self.piece_types.append(piece)
+        self.winning_players = players
 
     def crown_kings(self, kings):
         for king in kings:
@@ -38,24 +37,10 @@ class ChessGameState(PieceGameState, ABC):
                 self.revert()
         return legal
 
-
-class ChessPiece(Piece, ABC):
-    def __init__(self, game_state, player, location):
-        super().__init__(game_state, player, location)
-
-    @abstractmethod
-    def attackers_of_same_type(self, piece):
-        """
-        this method must give the pieces (of same type as self)in game_state where location is in piece.legal_moves
-        :param piece: the piece that is attacked by pieces
-        :return: list of pieces in game_state where type(piece) == type(self) and piece attacks location
-        """
-        pass
-
-    def attacked(self):
-        attacked = False
-        for piece_type in self.game_state.piece_types:
-            if piece_type.attackers_of_same_type(self):
-                attacked = True
-                break
-        return attacked
+    def score(self):
+        score = {}
+        for player in self.players:
+            if player in self.winning_players:
+                score[player] = 0
+            else:
+                score[player] = 1 / len(self.winning_players)

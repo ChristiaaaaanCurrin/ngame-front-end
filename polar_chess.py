@@ -1,6 +1,6 @@
 from game_prep import simple_players_from_integer
-from chess_game import ChessPiece, ChessGameState
-from piece_game import PieceGameState, PatternMovePiece, SimpleCapturePiece
+from chess_game import ChessGameState
+from piece_game import PieceGameState, PatternMovePiece, SimpleCapturePiece, Location
 
 
 class PolarChessGameState(ChessGameState, PieceGameState):
@@ -18,29 +18,44 @@ class PolarChessGameState(ChessGameState, PieceGameState):
         pass
 
     def neural_net_input(self):
-        pass
+        neural_net_input = []
+        for player in self.players:
+            if player == self.player_to_move:
+                neural_net_input.append(1)
+            else:
+                neural_net_input.append(0)
+        for player in self.players:
+            for r, ring_size in enumerate(self.ring_sizes):
+                for t in range(ring_size):
+                    if PolarChessTile(self.ring_sizes, r, t) in map(lambda x: x.location, self.pieces(player)):
+                        neural_net_input.append(1)
+                    else:
+                        neural_net_input.append(0)
+        return neural_net_input
 
     def randomize_position(self):
         pass
 
 
-class PolarChessTile:
+class PolarChessTile(Location):
     def __init__(self, ring_sizes, r_coord, t_coord):
         self.ring_sizes = ring_sizes
         self.r_coord = r_coord
         self.t_coord = t_coord
 
     def __eq__(self, other):
-        return self.r_coord == other.r_coord and self.t_coord == other.t_coord and self.ring_sizes == other.ring_sizes
+        return self.r_coord == other.r_coord\
+            and self.t_coord == other.t_coord\
+            and self.ring_sizes[self.r_coord] == other.ring_sizes[self.r_coord]
 
     def __repr__(self):
         return '(r = ' + str(self.r_coord)\
              + ', t = ' + str(self.t_coord)\
              + '/' + str(self.ring_sizes[self.r_coord]) + ')'
 
-    def axial_neighbors(self):
+    def axial_neighbors(self, t_shift):
         sizes = self.ring_sizes
-        return [PolarChessTile(sizes, self.r_coord, (self.t_coord + m) % sizes[self.r_coord]) for m in (-1, 1)]
+        return [PolarChessTile(sizes, self.r_coord, (self.t_coord + t_shift) % sizes[self.r_coord])]
 
     def radial_neighbors(self, r_shift):
         r = self.r_coord
@@ -55,18 +70,20 @@ class PolarChessTile:
             return []
 
 
-class Lion(SimpleCapturePiece, ChessPiece):
+class Lion(SimpleCapturePiece):
     def __repr__(self):
-        return 'Lion ' + str(self.player) + ' '  + str(self.location)
+        return 'Lion ' + str(self.player) + ' ' + str(self.location)
 
     def accessible_locations(self):
         accessible_locations = []
 
-        for location in self.location.axial_neighbors()\
-                      + self.location.radial_neighbors(1)\
-                      + self.location.radial_neighbors(-1):
-            if location not in map(lambda x: x.location, self.game_state.pieces(self.player)):
-                accessible_locations.append(location)
+        if self.location:
+            for location in self.location.axial_neighbors(1)\
+                          + self.location.axial_neighbors(-1)\
+                          + self.location.radial_neighbors(1)\
+                          + self.location.radial_neighbors(-1):
+                if location not in map(lambda x: x.location, self.game_state.pieces(self.player)):
+                    accessible_locations.append(location)
 
         return accessible_locations
 
@@ -83,16 +100,14 @@ class Lion(SimpleCapturePiece, ChessPiece):
 
 if __name__ == '__main__':
 
-    test_tile = PolarChessTile([1, 4, 12, 24, 24], 1, 0)
-    test_tile2 = PolarChessTile([1, 4, 12, 24, 24], 1, 1)
-    test_neighbors = test_tile.radial_neighbors(1)
-    print(test_tile)
-    print(test_neighbors)
     test_game = PolarChessGameState()
+
+    test_tile = PolarChessTile(test_game.ring_sizes, 1, 0)
+    test_tile2 = PolarChessTile(test_game.ring_sizes, 1, 1)
     test_game.set_board([Lion(test_game, test_game.player_to_move, test_tile),
                          Lion(test_game, test_game.player_to_move.turn(), test_tile2)])
     print(test_game)
     print(test_game.legal_moves())
-    print(Lion(test_game, test_game.player_to_move, test_tile))
-    print(test_game.players)
+    test_game.make_move(test_game.legal_moves()[1])
+    print(test_game)
 
