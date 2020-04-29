@@ -30,7 +30,7 @@ class ChessGameState(PieceGameState, ABC):
 
     def legal_moves(self):
         legal = []
-        for piece in self.pieces():
+        for piece in self.pieces(self.player_to_move):
             for move in piece.legal_moves():
                 if not self.in_check(piece.player):
                     legal.append(move)
