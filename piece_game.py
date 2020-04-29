@@ -119,6 +119,7 @@ class SimpleCapturePiece(SimpleMovePiece, ABC):
         return filter(lambda x: x.location == location, self.game_state.pieces())
 
 
+# INCOMPLETE
 class PatternMovePiece(SimpleMovePiece, ABC):
     @abstractmethod
     def accessible_locations_step(self):
