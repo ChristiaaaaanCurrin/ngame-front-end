@@ -60,9 +60,10 @@ class PieceGameState(GameState, ABC):
 
     def revert(self):
         if self.history:
-            (previous_player, anti_move) = self.history.pop(-1)
-            self.execute_move(anti_move)
-            self.player_to_move = previous_player
+            (previous_player, revert_move) = self.history.pop(-1)
+            for piece_move in revert_move:
+                self.execute_move(piece_move)
+                self.player_to_move = previous_player
             return True
         else:
             return False

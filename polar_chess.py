@@ -30,6 +30,9 @@ class PolarChessTile:
         self.r_coord = r_coord
         self.t_coord = t_coord
 
+    def __eq__(self, other):
+        return self.r_coord == other.r_coord and self.t_coord == other.t_coord and self.ring_sizes == other.ring_sizes
+
     def __repr__(self):
         return '(r = ' + str(self.r_coord)\
              + ', t = ' + str(self.t_coord)\
@@ -92,3 +95,4 @@ if __name__ == '__main__':
     print(test_game.legal_moves())
     print(Lion(test_game, test_game.player_to_move, test_tile))
     print(test_game.players)
+

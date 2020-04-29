@@ -32,8 +32,10 @@ class ChessGameState(PieceGameState, ABC):
         legal = []
         for piece in self.pieces(self.player_to_move):
             for move in piece.legal_moves():
+                self.make_move(move)
                 if not self.in_check(piece.player):
                     legal.append(move)
+                self.revert()
         return legal
 
 
