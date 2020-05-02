@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from game_prep import GameState, Move, Pass
+from game_prep import GameState, Move, Pass, EqualityByArgs
 
 
 class PieceGameState(GameState, ABC):
@@ -10,8 +10,8 @@ class PieceGameState(GameState, ABC):
     a location that helps track the consequences of moves, and a method returning a list of legal moves
     that describes how the pieces are able to influence the game.
     """
-    def __init__(self, players, player_to_move, pieces=None, history=None):
-        super().__init__(players, player_to_move)
+    def __init__(self, players, player_to_move=None, pieces=None, history=None):
+        super().__init__(players=players, player_to_move=player_to_move)
 
         self.all_pieces = []
         self.piece_types = []
@@ -31,6 +31,7 @@ class PieceGameState(GameState, ABC):
 
     def set_board(self, pieces):
         for piece in pieces:
+            piece.game_state = self
             self.all_pieces.append(piece)
             if type(piece) not in map(type, self.piece_types):
                 self.piece_types.append(piece)
@@ -45,43 +46,44 @@ class PieceGameState(GameState, ABC):
             pieces = self.all_pieces
         return pieces
 
-    def piece_legal_moves(self):
+    def piece_legal_moves(self, player):
         legal = []
-        for piece in self.pieces(self.player_to_move):
-            for move in piece.legal_moves(self):
+        for piece in self.pieces(player):
+            for move in piece.legal_moves():
                 legal.append(move)
         return legal
 
     def legal_moves(self):
-        return self.piece_legal_moves()
+        return self.piece_legal_moves(self.player_to_move)
 
-    def execute_move(self, piece_move):
-        piece_move.piece.location = piece_move.new_location
-        if piece_move.piece in self.pieces():
-            if piece_move.new_location:
-                piece_move.piece.location = piece_move.new_location
-            else:
-                self.all_pieces.remove(piece_move.piece)
-        elif piece_move.new_location:
-            self.all_pieces.append(piece_move.piece)
-
-    def index_turn(self):
+    def index_turn(self, move):
         self.player_to_move = self.player_to_move.turn()
+
+    @abstractmethod
+    def evaluate_player_status(self, player):
+        """
+        find what player status "should be"
+        :param player: player whose status is to be changed
+        :return: PlayerStatusChange
+        """
+        pass
 
     def make_move(self, move):
         revert_move = []
         for piece_move in move:
             revert_move.append(piece_move.anti_move())
-            self.execute_move(piece_move)
-        self.history.append((self.player_to_move, revert_move))
-        self.index_turn()
+            piece_move.execute_move()
+        revert_status = self.evaluate_player_status(self.player_to_move)
+        self.history.append((self.player_to_move, revert_move, revert_status))
+        self.index_turn(move)
 
     def revert(self):
         if self.history:
-            (previous_player, revert_move) = self.history.pop(-1)
+            (previous_player, revert_move, revert_status) = self.history.pop(-1)
+            self.player_to_move = previous_player
             for piece_move in revert_move:
-                self.execute_move(piece_move)
-                self.player_to_move = previous_player
+                piece_move.execute_move()
+            revert_status.execute_move()
             return True
         else:
             return False
@@ -92,7 +94,10 @@ class DefaultPieceGameState(PieceGameState):
     DefaultPieceGameState is a dummy PieceGameState that allows pieces to be instantiated without a game
     """
     def __init__(self):
-        super().__init__(players=None, player_to_move=None)
+        super().__init__(players=None)
+
+    def evaluate_player_status(self, player):
+        return Pass()
 
     def utility(self):
         return {}
@@ -104,7 +109,7 @@ class DefaultPieceGameState(PieceGameState):
         pass
 
 
-class Location(ABC):
+class Location(ABC, EqualityByArgs):
     """
     Location includes useful overrides for __eq__ and __repr__ that make locations easier to deal with
     """
@@ -139,8 +144,18 @@ class PieceMoveAddRemove(Move):
     def anti_move(self):
         return PieceMoveAddRemove(self.piece, self.piece.location)
 
+    def execute_move(self):
+        self.piece.location = self.new_location
+        if self.piece in self.piece.game_state.pieces():
+            if self.new_location:
+                self.piece.location = self.new_location
+            else:
+                self.piece.game_state.all_pieces.remove(self.piece)
+        elif self.new_location:
+            self.piece.game_state.all_pieces.append(self.piece)
 
-class Piece(ABC):
+
+class Piece(ABC, EqualityByArgs):
     """
     Piece contains the minimum requirements for a piece: game_state, player, location, legal_moves().
     """

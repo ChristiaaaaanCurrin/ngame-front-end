@@ -4,7 +4,7 @@ import random
 
 
 class TicTacToe(GameState):
-    def __init__(self, players=('x', 'o'), player_to_move=0, rows=3, columns=3, win_condition=3, pieces=None,
+    def __init__(self, players=('x', 'o'), player_to_move=None, rows=3, columns=3, win_condition=3, pieces=None,
                  history=None):
         super().__init__(players, player_to_move)
 
@@ -131,9 +131,11 @@ class TicTacToe(GameState):
 
 if __name__ == "__main__":
     test_game = TicTacToe()
-
+    print(test_game.n_max(9))
+    """
     test_training_data = test_game.neural_net_training_data(3, 1000)
 
     test_network = VanillaNetwork([len(test_game.neural_net_input()), 10, 10, 10, 10, len(test_game.utility())])
 
     test_network.SGD(test_training_data, 3, 100, 1)
+    """

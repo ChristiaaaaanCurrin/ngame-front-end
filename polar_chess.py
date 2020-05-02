@@ -6,16 +6,13 @@ from piece_game import PieceGameState, PatternMovePiece, SimpleCapturePiece, Loc
 class PolarChessGameState(ChessGameState, PieceGameState):
     def __init__(self,
                  ring_sizes=(1, 4, 12, 24, 24),
-                 players=simple_players_from_integer(2),
+                 players=simple_players_from_integer(1),
                  player_to_move=None,
                  history=None):
         if not player_to_move:
             player_to_move = players[0]
         super().__init__(players=players, player_to_move=player_to_move, history=history)
         self.ring_sizes = ring_sizes
-
-    def utility(self):
-        pass
 
     def neural_net_input(self):
         neural_net_input = []
@@ -62,8 +59,8 @@ class PolarChessTile(Location):
         r = self.r_coord
         t = self.t_coord
         size = self.ring_sizes[r]
-        new_size = self.ring_sizes[r + r_shift]
-        if 0 <= (r + r_shift) <= len(self.ring_sizes):
+        if 0 <= (r + r_shift) < len(self.ring_sizes):
+            new_size = self.ring_sizes[r + r_shift]
             return [PolarChessTile(self.ring_sizes, r + r_shift, new_t
                                    ) for new_t in range(t * new_size // size % new_size,
                                                         new_size - (size - t - 1) * new_size // size)]
@@ -104,10 +101,14 @@ if __name__ == '__main__':
     test_game = PolarChessGameState()
 
     test_tile = PolarChessTile(test_game.ring_sizes, 1, 0)
-    test_tile2 = PolarChessTile(test_game.ring_sizes, 1, 1)
+    test_tile2 = PolarChessTile(test_game.ring_sizes, 3, 1)
     test_game.set_board([Lion(test_game, test_game.player_to_move, test_tile),
                          Lion(test_game, test_game.player_to_move.turn(), test_tile2)])
-    print(test_game)
+    #test_game.crown_kings(test_game.pieces())
     print(test_game.legal_moves())
-    test_game.make_move(test_game.legal_moves()[1])
-    print(test_game)
+    print(test_game.utility())
+    for move in test_game.legal_moves():
+        test_game.make_move(move)
+        print(test_game.utility())
+        test_game.revert()
+    print(test_game.n_max(5))

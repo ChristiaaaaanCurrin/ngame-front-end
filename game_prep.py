@@ -1,9 +1,68 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from enum import Enum
 
+
+# Useful Classes
+
+class EqualityByType:
+    def __eq__(self, other):
+        return type(self) == type(other)
+
+
+class EqualityByArgs:
+    def __init__(self, *args):
+        self.args = args
+
+    def __eq__(self, other):
+        return self.args == other.args and type(self) == type(other)
+
+
+# Basic Player Status Classes
+
+class PlayerStatus(EqualityByType, ABC):
+    @abstractmethod
+    def value(self, total):
+        pass
+
+
+class Win(PlayerStatus):
+    def value(self, total):
+        return 1
+
+    def __repr__(self):
+        return 'Win'
+
+
+class Lose(PlayerStatus):
+    def value(self, total):
+        return 0
+
+    def __repr__(self):
+        return 'Lose'
+
+
+class Draw(PlayerStatus):
+    def value(self, total):
+        return 1 / total
+
+    def __repr__(self):
+        return 'Draw'
+
+
+class PlayOn(PlayerStatus):
+    def value(self, total):
+        return 1 / total
+
+    def __repr__(self):
+        return 'PlayOn'
+
+
+# Basic Player Classes
 
 class Player(ABC):
+    def __init__(self):
+        self.status = PlayOn()
+
     @abstractmethod
     def turn(self):
         pass
@@ -11,6 +70,7 @@ class Player(ABC):
 
 class SimplePlayer(Player):
     def __init__(self, successor, tag):
+        super().__init__()
         self.next = successor
         self.tag = tag
 
@@ -21,17 +81,13 @@ class SimplePlayer(Player):
         return self.next
 
 
-class PlayerStatus(Enum):
-    LOOSE = 0
-    WIN = 1
-    DRAW = 2
-    CONTINUE = 3
-
+# Basic Move Classes
 
 class Move(ABC):
     """
     A move contains enough information to modify the GameState and undo itself
     """
+
     @abstractmethod
     def anti_move(self):
         """
@@ -39,16 +95,17 @@ class Move(ABC):
         """
         pass
 
+    @abstractmethod
+    def execute_move(self):
+        pass
 
-class Pass(Move):
+
+class Pass(Move, EqualityByType):
     """
-    A Pass is a Move that does nothing
+    A Pass is a Move that does nothing. All passes are the same (equality by type).
     """
-    def __eq__(self, other):
-        """
-        all passes are the same
-        """
-        return type(self) == type(other)
+    def __repr__(self):
+        return 'PASS'
 
     def anti_move(self):
         """
@@ -56,6 +113,33 @@ class Pass(Move):
         """
         return self
 
+    def execute_move(self):
+        pass
+
+
+class PlayerStatusChange(Move):
+    """
+    A players status changes the status of a player (does not need a gamestate to function)
+    """
+    def __init__(self, player, new_status):
+        """
+        :param player: player whose status is to be changed
+        :param new_status: new status of player
+        """
+        self.player = player
+        self.new_status = new_status
+
+    def __repr__(self):
+        return str(self.player) + ' -> ' + str(self.new_status)
+
+    def anti_move(self):
+        return PlayerStatusChange(self.player, self.player.status)
+
+    def execute_move(self):
+        self.player.status = self.new_status
+
+
+# Basic GameState
 
 class GameState(ABC):
     def __init__(self, players, player_to_move):
@@ -69,6 +153,10 @@ class GameState(ABC):
             self.player_to_move = player_to_move
         else:
             self.player_to_move = players[0]
+
+        player_status = {}
+        for player in self.players:
+            player_status[player] = PlayOn()
 
     @abstractmethod
     def utility(self):
