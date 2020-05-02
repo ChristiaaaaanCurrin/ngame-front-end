@@ -38,18 +38,22 @@ class ChessGameState(PieceGameState, ABC):
         return legal
 
     def evaluate_player_status(self, player):
-        other_players = filter(lambda x: x != self.player_to_move, self.players)
-        if any(map(lambda x: x.status == PlayOn(), other_players)):
-            return PlayerStatusChange(player, player.status)
-        elif (not self.multiple_winners) and any(map(lambda x: x.status == Win(), other_players)):
-            return PlayerStatusChange(player, Lose())
-        elif all(map(lambda x: x.status == Lose(), other_players)):
-            return PlayerStatusChange(player, Win())
+        other_players = list(filter(lambda x: x != player, self.players))
+
+        if player.status == PlayOn():
+            if any(list(map(lambda x: x.status == PlayOn(), other_players))):
+                return Pass()
+            elif (not self.multiple_winners) and any(list(map(lambda x: x.status == Win(), other_players))):
+                return PlayerStatusChange(player, Lose())
+            elif all(list(map(lambda x: x.status == Lose(), other_players))):
+                return PlayerStatusChange(player, Win())
+            else:
+                return PlayerStatusChange(player, Draw())
         else:
-            return PlayerStatusChange(player, Draw())
+            return Pass()
 
     def legal_moves(self):
-        if all(map((lambda x: x.status != PlayOn(), self.players()))):
+        if all(map(lambda x: x.status != PlayOn(), self.players)):
             return []
         elif self.player_to_move.status == PlayOn():
             if self.player_legal_moves(self.player_to_move):
@@ -66,12 +70,10 @@ class ChessGameState(PieceGameState, ABC):
             return [[Pass()]]
 
     def utility(self):
-        print(str(len(self.history)) + ' - ' + str(self.player_to_move))
         total_utility = sum(map(len, map(self.player_legal_moves, self.players)))
         score = {}
         for player in self.players:
             player_utility = len(self.player_legal_moves(player))
-            print(str(player) + ' - ' + str(player_utility) + ' - ' + str(player.status))
             if player.status == PlayOn():
                 score[player] = player.status.value(total_utility) * player_utility
             else:

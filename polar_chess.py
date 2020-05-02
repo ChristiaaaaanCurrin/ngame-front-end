@@ -1,6 +1,7 @@
 from game_prep import simple_players_from_integer
 from chess_game import ChessGameState
 from piece_game import PieceGameState, PatternMovePiece, SimpleCapturePiece, Location
+from time import time
 
 
 class PolarChessGameState(ChessGameState, PieceGameState):
@@ -100,15 +101,23 @@ if __name__ == '__main__':
 
     test_game = PolarChessGameState()
 
+    points = [(1, 0), (4, 23)]
+    pieces = []
+    player = test_game.player_to_move
+    for point in points:
+        player = player.turn()
+        test_tile = PolarChessTile(test_game.ring_sizes, point[0], point[1])
+        pieces.append(Lion(test_game, player, test_tile))
+    print(pieces)
     test_tile = PolarChessTile(test_game.ring_sizes, 1, 0)
     test_tile2 = PolarChessTile(test_game.ring_sizes, 3, 1)
-    test_game.set_board([Lion(test_game, test_game.player_to_move, test_tile),
-                         Lion(test_game, test_game.player_to_move.turn(), test_tile2)])
+    test_tile3 = PolarChessTile(test_game.ring_sizes, 4, 12)
+    test_game.set_board(pieces)
     #test_game.crown_kings(test_game.pieces())
     print(test_game.legal_moves())
-    print(test_game.utility())
-    for move in test_game.legal_moves():
-        test_game.make_move(move)
-        print(test_game.utility())
-        test_game.revert()
-    print(test_game.n_max(5))
+    print(pieces[0].attackers_of_same_type(pieces[0]))
+    start_time = time()
+    print(test_game.n_max())
+    end_time = time()
+    total_time = end_time - start_time
+    print(total_time)

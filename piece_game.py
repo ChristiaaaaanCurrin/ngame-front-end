@@ -73,7 +73,13 @@ class PieceGameState(GameState, ABC):
         for piece_move in move:
             revert_move.append(piece_move.anti_move())
             piece_move.execute_move()
-        revert_status = self.evaluate_player_status(self.player_to_move)
+        revert_status = []
+
+        for player in self.players:
+            status_change = self.evaluate_player_status(player)
+            revert_status.append(status_change.anti_move())
+            status_change.execute_move()
+
         self.history.append((self.player_to_move, revert_move, revert_status))
         self.index_turn(move)
 
@@ -83,7 +89,8 @@ class PieceGameState(GameState, ABC):
             self.player_to_move = previous_player
             for piece_move in revert_move:
                 piece_move.execute_move()
-            revert_status.execute_move()
+            for status_change in revert_status:
+                status_change.execute_move()
             return True
         else:
             return False
@@ -114,6 +121,7 @@ class Location(ABC, EqualityByArgs):
     Location includes useful overrides for __eq__ and __repr__ that make locations easier to deal with
     """
     def __init__(self, *coords):
+        super().__init__(*coords)
         self.coords = coords
 
     def __eq__(self, other):
@@ -165,6 +173,7 @@ class Piece(ABC, EqualityByArgs):
         :param player: must be a Player in game_state.players
         :param location: identifies current piece properties in game_state
         """
+        super().__init__(game_state, player, location)
         if game_state:
             self.game_state = game_state
         else:
