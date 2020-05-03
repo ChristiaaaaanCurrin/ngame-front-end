@@ -100,6 +100,27 @@ class Move(ABC):
         pass
 
 
+class CombinationMove(Move):
+    def __init__(self, *components):
+        self.components = components
+
+    def __eq__(self, other):
+        return self.components == other.components
+
+    def add_move(self, move):
+        return self.components + tuple([move])
+
+    def anti_move(self):
+        anti_components = []
+        for component in self.components:
+            anti_components.append(component.anti_move())
+        return CombinationMove(*anti_components)
+
+    def execute_move(self):
+        for component in self.components:
+            component.execute_move()
+
+
 class Pass(Move, EqualityByType):
     """
     A Pass is a Move that does nothing. All passes are the same (equality by type).
@@ -137,6 +158,19 @@ class PlayerStatusChange(Move):
 
     def execute_move(self):
         self.player.status = self.new_status
+
+
+class GameStatePlayerChange(Move, EqualityByArgs):
+    def __init__(self, game_state, new_player_to_move):
+        super().__init__()
+        self.game_state = game_state
+        self.new_player_to_move = new_player_to_move
+
+    def anti_move(self):
+        return GameStatePlayerChange(self.game_state, self.game_state.player_to_move)
+
+    def execute_move(self):
+        self.game_state.player_to_move = self.new_player_to_move
 
 
 # Basic GameState
