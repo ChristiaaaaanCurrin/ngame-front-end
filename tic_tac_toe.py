@@ -1,4 +1,4 @@
-from game_prep import GameState
+from game import GameState
 from neural_net import VanillaNetwork
 import random
 
