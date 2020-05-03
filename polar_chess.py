@@ -117,7 +117,7 @@ if __name__ == '__main__':
     print(test_game.legal_moves())
     print(pieces[0].attackers_of_same_type(pieces[0]))
     start_time = time()
-    print(test_game.n_max())
+    print(test_game.n_max(2))
     end_time = time()
     total_time = end_time - start_time
     print(total_time)
