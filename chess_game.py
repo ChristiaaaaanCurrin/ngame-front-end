@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from piece_game import PieceGameState
-from game_prep import Win, Lose, Draw, PlayOn, Pass, PlayerStatusChange
+from player import Win, Lose, Draw, PlayOn
+from move import PlayerStatusChange, Pass
 
 
 class ChessGameState(PieceGameState, ABC):

@@ -1,6 +1,8 @@
-from game_prep import simple_players_from_integer
+from game import n_max
 from chess_game import ChessGameState
-from piece_game import PieceGameState, PatternMovePiece, SimpleCapturePiece, Location
+from player import simple_players_from_integer
+from piece import PatternMovePiece, SimpleCapturePiece, Location
+from piece_game import PieceGameState
 from time import time
 
 
