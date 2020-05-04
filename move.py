@@ -29,7 +29,14 @@ class CombinationMove(Move):
         return self.components == other.components
 
     def add_move(self, move):
-        return self.components + tuple([move])
+        self.components = self.components + tuple([move])
+
+    def remove_move(self, remove_component):
+        new_components = []
+        for component in self.components:
+            if component != remove_component:
+                new_components.append(component)
+        self.components = new_components
 
     def anti_move(self):
         anti_components = []

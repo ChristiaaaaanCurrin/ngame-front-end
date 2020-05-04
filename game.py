@@ -7,27 +7,47 @@ import numpy as np
 # Basic GameState
 
 class GameState(ABC):
+    """
+    GameStates are moments during the play of a game. They do not hold the rules of the game or other methods that are
+    properties of the game as a whole. GameStates should be initialized by a game and should always be paired with an
+    appropriate game.
+    """
     def __init__(self, players, player_to_move):
         """
         Initiates a "snapshot' of a board game. Includes who's turn it is, where the pieces are, etc.
         :param players: list of players in the game
         :param player_to_move: player whose turn it currently is
         """
-        self.players = players
+        self.all_players = players
         if player_to_move:
             self.player_to_move = player_to_move
         else:
             self.player_to_move = players[0]
 
-        for player in self.players:
+        for player in self.all_players:
             player.status = PlayOn()
+
+    def players(self, *player_statuses, not_player=None):
+        players = []
+        for player in self.all_players:
+            if (player.status in player_statuses or not player_statuses) and player != not_player:
+                players.append(player)
+        return players
 
 
 # Basic Game
 
 class Game(ABC, EqualityByType):
+    """
+    A Game is a set of methods outlining how a valid GameState under the Game changes as the players take actions. These
+    methods often take a GameState as an input, and the GameState must be a valid GameState under Game, to aid with this,
+    Game includes a method for creating a valid GameState (default_game_state).
+    """
     @abstractmethod
     def default_game_state(self):
+        """
+        :return: the default valid game_state under game
+        """
         pass
 
     @abstractmethod
@@ -60,6 +80,16 @@ class Game(ABC, EqualityByType):
         """
         :return: list of legal moves available to 'player_to_move'
                  must be same type as moves must be same type as 'move' parameter in 'make_move'
+        """
+        pass
+
+    @abstractmethod
+    def evaluate_player_status(self, game_state, player):
+        """
+        find what player status "should be"
+        :param game_state: game state that player belongs to
+        :param player: player whose status is to be changed
+        :return: PlayerStatusChange
         """
         pass
 

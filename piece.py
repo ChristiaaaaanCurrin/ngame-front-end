@@ -3,6 +3,8 @@ from equality_modifiers import EqualityByArgs
 from move import Move
 
 
+# Location SuperClass
+
 class Location(ABC, EqualityByArgs):
     """
     Location includes useful overrides for __eq__ and __repr__ that make locations easier to deal with
@@ -11,12 +13,11 @@ class Location(ABC, EqualityByArgs):
         super().__init__(*coords)
         self.coords = coords
 
-    def __eq__(self, other):
-        return self.coords == other.coords
-
     def __repr__(self):
         return str(self.coords)
 
+
+# Move Classes for Pieces
 
 class PieceMoveAddRemove(Move):
     """
@@ -45,10 +46,25 @@ class PieceMoveAddRemove(Move):
             if self.new_location:
                 self.piece.location = self.new_location
             else:
-                game_state.all_pieces.remove(self.piece)
+                game_state.remove_pieces(self.piece)
         elif self.new_location:
-            game_state.all_pieces.append(self.piece)
+            game_state.add_piece(self.piece)
 
+
+class PiecePlayerChange(Move):
+    def __init__(self, piece, new_player):
+        super().__init__()
+        self.piece = piece
+        self.new_player = new_player
+
+    def anti_move(self):
+        return PiecePlayerChange(self.piece, self.piece.player)
+
+    def execute_move(self, game_state):
+        self.piece.player = self.new_player
+
+
+# Basic Piece Classes
 
 class Piece(ABC, EqualityByArgs):
     """
@@ -64,16 +80,18 @@ class Piece(ABC, EqualityByArgs):
         self.location = location
 
     @abstractmethod
-    def legal_moves(self):
+    def legal_moves(self, game_state):
         """
+        :param game_state: game state of self
         :return: what actions ("moves") the piece can legally make. must be of type PieceMoveAddRemove
         """
         pass
 
     @abstractmethod
-    def attackers_of_same_type(self, piece):
+    def attackers_of_same_type(self, game_state, piece):
         """
         this method should be overridden if attacked is to be used
+        :param game_state: game state of self
         :param piece: the piece that is attacked by pieces
         :return: list of pieces in game_state where type(piece) == type(self) and piece "attacks" self
         """
@@ -98,28 +116,29 @@ class SimpleMovePiece(Piece, ABC):
     a method returning a list of pieces that would be captured if self moved to a given location
     """
     @abstractmethod
-    def accessible_locations(self):
+    def accessible_locations(self, game_state):
         """
         :return: list of locations that self can move to
         """
         pass
 
     @abstractmethod
-    def captured_pieces(self, location):
+    def captured_pieces(self, game_state, location):
         """
+        :param game_state: the game_state of the piece
         :param location: potential location to which self might move
         :return: list of pieces captured if self moves to location
         """
         pass
 
-    def legal_moves(self):
+    def legal_moves(self, game_state):
         """
         :return: list of legal moves for self given accessible locations
         """
         legal = []
-        for location in self.accessible_locations():
+        for location in self.accessible_locations(game_state):
             move = [PieceMoveAddRemove(self, location)]  # A move will always change the pieces location
-            for captured_piece in self.captured_pieces(location):
+            for captured_piece in self.captured_pieces(game_state, location):
                 move.append(PieceMoveAddRemove(captured_piece))  # self captures pieces by moving them to location None
             legal.append(move)
         return legal
@@ -129,8 +148,8 @@ class SimpleCapturePiece(SimpleMovePiece, ABC):
     """
     A SimpleCapturePiece captures by moving to the same location as the target piece.
     """
-    def captured_pieces(self, location):
-        return filter(lambda x: x.location == location, self.game_state.pieces())
+    def captured_pieces(self, game_state, location):
+        return filter(lambda x: x.location == location, game_state.pieces())
 
 
 # INCOMPLETE

@@ -1,8 +1,8 @@
 from game import n_max
-from chess_game import ChessGameState
+from chess_game import ChessGameState, ChessGame
 from player import simple_players_from_integer
 from piece import PatternMovePiece, SimpleCapturePiece, Location
-from piece_game import PieceGameState
+from piece_game import PieceGameState, PieceGame
 from time import time
 
 
@@ -10,30 +10,32 @@ class PolarChessGameState(ChessGameState, PieceGameState):
     def __init__(self,
                  ring_sizes=(1, 4, 12, 24, 24),
                  players=simple_players_from_integer(1),
-                 player_to_move=None,
-                 history=None):
-        if not player_to_move:
-            player_to_move = players[0]
-        super().__init__(players=players, player_to_move=player_to_move, history=history)
+                 player_to_move=None, pieces=None, kings=None, history=None):
+        super().__init__(players=players, player_to_move=player_to_move, pieces=pieces, kings=kings, history=history)
         self.ring_sizes = ring_sizes
 
-    def neural_net_input(self):
+
+class PolarChessGame(ChessGame, PieceGame):
+    def neural_net_input(self, game_state):
         neural_net_input = []
-        for player in self.players:
-            if player == self.player_to_move:
+        for pl in game_state.players:
+            if pl == game_state.player_to_move:
                 neural_net_input.append(1)
             else:
                 neural_net_input.append(0)
-        for player in self.players:
-            for r, ring_size in enumerate(self.ring_sizes):
+        for pl in game_state.players():
+            for r, ring_size in enumerate(game_state.ring_sizes):
                 for t in range(ring_size):
-                    if PolarChessTile(self.ring_sizes, r, t) in map(lambda x: x.location, self.pieces(player)):
+                    if PolarChessTile(game_state.ring_sizes, r, t) in map(lambda x: x.location, game_state.pieces(pl)):
                         neural_net_input.append(1)
                     else:
                         neural_net_input.append(0)
         return neural_net_input
 
-    def randomize_position(self):
+    def default_game_state(self):
+        return PolarChessGameState()
+
+    def randomize_position(self, game_state):
         pass
 
 
@@ -75,7 +77,7 @@ class Lion(SimpleCapturePiece):
     def __repr__(self):
         return 'Lion ' + str(self.player) + ' ' + str(self.location)
 
-    def accessible_locations(self):
+    def accessible_locations(self, game_state):
         accessible_locations = []
 
         if self.location:
@@ -83,15 +85,15 @@ class Lion(SimpleCapturePiece):
                           + self.location.axial_neighbors(-1)\
                           + self.location.radial_neighbors(1)\
                           + self.location.radial_neighbors(-1):
-                if location not in map(lambda x: x.location, self.game_state.pieces(self.player)):
+                if location not in map(lambda x: x.location, game_state.pieces(self.player)):
                     accessible_locations.append(location)
 
         return accessible_locations
 
-    def attackers_of_same_type(self, piece):
+    def attackers_of_same_type(self, game_state, piece):
         attackers = []
-        for new_piece in self.game_state.pieces():
-            for location in Lion.accessible_locations(piece):
+        for new_piece in game_state.pieces():
+            for location in self.accessible_locations(game_state=game_state):
                 if new_piece.location == location:
                     if new_piece.player != piece.player:
                         if type(new_piece) == type(self):
@@ -101,25 +103,20 @@ class Lion(SimpleCapturePiece):
 
 if __name__ == '__main__':
 
-    test_game = PolarChessGameState()
+    test_game = PolarChessGame()
+    test_game_state = test_game.default_game_state()
 
-    points = [(1, 0), (4, 23)]
-    pieces = []
-    player = test_game.player_to_move
+    points = [(1, 0), (3, 12)]
+    test_pieces = []
+    player = test_game_state.player_to_move
     for point in points:
         player = player.turn()
-        test_tile = PolarChessTile(test_game.ring_sizes, point[0], point[1])
-        pieces.append(Lion(test_game, player, test_tile))
-    print(pieces)
-    test_tile = PolarChessTile(test_game.ring_sizes, 1, 0)
-    test_tile2 = PolarChessTile(test_game.ring_sizes, 3, 1)
-    test_tile3 = PolarChessTile(test_game.ring_sizes, 4, 12)
-    test_game.set_board(pieces)
-    #test_game.crown_kings(test_game.pieces())
-    print(test_game.legal_moves())
-    print(pieces[0].attackers_of_same_type(pieces[0]))
-    start_time = time()
-    print(test_game.n_max(2))
-    end_time = time()
-    total_time = end_time - start_time
-    print(total_time)
+        test_tile = PolarChessTile(test_game_state.ring_sizes, point[0], point[1])
+        test_pieces.append(Lion(player=player, location=test_tile))
+
+    test_game_state.add_pieces(*test_pieces)
+
+    print(test_game_state.players())
+
+    print(n_max(test_game, test_game_state, 10))
+
