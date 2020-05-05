@@ -65,7 +65,9 @@ class ChessGame(PieceGame, ABC):
         index_player = GameStatePlayerChange(game_state, game_state.player_to_move.turn())
         update_players = [self.evaluate_player_status(game_state, player) for player in game_state.players()]
         moves = self.player_legal_moves(game_state, game_state.player_to_move)
-
+        print('--------')
+        print(game_state)
+        print(moves)
         if not game_state.players([PlayOn()]):
             return []
         elif game_state.player_to_move.status == PlayOn():

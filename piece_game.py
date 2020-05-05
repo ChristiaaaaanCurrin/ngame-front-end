@@ -22,9 +22,9 @@ class PieceGameState(GameState, ABC):
             self.history = []
 
     def __repr__(self):
-        string = str(self.player_to_move) + ' to move\n'
+        string = str(self.player_to_move) + ' to move'
         for piece in self.pieces():
-            string = string + str(piece) + '\n'
+            string = string + '\n' + str(piece)
         return string
 
     def pieces(self, player=None):

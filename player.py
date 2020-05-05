@@ -69,9 +69,9 @@ class SimplePlayer(Player):
 # Static Methods
 
 def simple_players_from_integer(number_of_players):
-    players = [SimplePlayer(None, number_of_players+1)]
-    for n in range(number_of_players):
-        players.append(SimplePlayer(players[n], number_of_players-n))
+    players = [SimplePlayer(None, number_of_players)]
+    for n in range(number_of_players-1):
+        players.append(SimplePlayer(players[n], number_of_players-1-n))
     players[0].next = players[-1]
     players.reverse()
     return players

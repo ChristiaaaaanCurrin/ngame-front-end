@@ -9,7 +9,7 @@ from time import time
 class PolarChessGameState(ChessGameState, PieceGameState):
     def __init__(self,
                  ring_sizes=(1, 4, 12, 24, 24),
-                 players=simple_players_from_integer(1),
+                 players=simple_players_from_integer(2),
                  player_to_move=None, pieces=None, kings=None, history=None):
         super().__init__(players=players, player_to_move=player_to_move, pieces=pieces, kings=kings, history=history)
         self.ring_sizes = ring_sizes
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     test_game = PolarChessGame()
     test_game_state = test_game.default_game_state()
 
-    points = [(1, 0), (3, 12)]
+    points = [(0, 0), (3, 12)]
     test_pieces = []
     player = test_game_state.player_to_move
     for point in points:
@@ -115,8 +115,6 @@ if __name__ == '__main__':
         test_pieces.append(Lion(player=player, location=test_tile))
 
     test_game_state.add_pieces(*test_pieces)
-
-    print(test_game_state.players())
 
     print(n_max(test_game, test_game_state, 10))
 
