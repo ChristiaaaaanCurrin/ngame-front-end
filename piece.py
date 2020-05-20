@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from equality_modifiers import EqualityByArgs
-from move import Move
+from move import Move, CombinationMove
 
 
 # Location SuperClass
@@ -48,7 +48,7 @@ class PieceMoveAddRemove(Move):
             else:
                 game_state.remove_pieces(self.piece)
         elif self.new_location:
-            game_state.add_piece(self.piece)
+            game_state.add_pieces(self.piece)
 
 
 class PiecePlayerChange(Move):
@@ -103,7 +103,7 @@ class Piece(ABC, EqualityByArgs):
         """
         attacked = False
         for piece_type in game_state.piece_types:
-            if piece_type.attackers_of_same_type(self):
+            if piece_type.attackers_of_same_type(game_state, self):
                 attacked = True
                 break
         return attacked
@@ -137,9 +137,9 @@ class SimpleMovePiece(Piece, ABC):
         """
         legal = []
         for location in self.accessible_locations(game_state):
-            move = [PieceMoveAddRemove(self, location)]  # A move will always change the pieces location
+            move = CombinationMove(PieceMoveAddRemove(self, location))  # A move will always change the pieces location
             for captured_piece in self.captured_pieces(game_state, location):
-                move.append(PieceMoveAddRemove(captured_piece))  # self captures pieces by moving them to location None
+                move.add_move(PieceMoveAddRemove(captured_piece))  # captures pieces by moving them to location None
             legal.append(move)
         return legal
 
@@ -169,7 +169,7 @@ class PatternMovePiece(SimpleMovePiece, ABC):
     def stop_on_location(self, location):
         pass
 
-    def accessible_locations(self):
+    def accessible_locations(self, game_state):
         accessible_locations = []
         for neighbor_finder in self.accessible_locations_step():
             edge = neighbor_finder(self)

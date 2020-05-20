@@ -104,6 +104,7 @@ class Lion(SimpleCapturePiece):
 if __name__ == '__main__':
 
     test_game = PolarChessGame()
+
     test_game_state = test_game.default_game_state()
 
     points = [(0, 0), (3, 12)]
@@ -115,6 +116,7 @@ if __name__ == '__main__':
         test_pieces.append(Lion(player=player, location=test_tile))
 
     test_game_state.add_pieces(*test_pieces)
+    test_game_state.crown_kings(*test_pieces)
 
-    print(n_max(test_game, test_game_state, 10))
+    print(n_max(test_game, test_game_state, 6))
 

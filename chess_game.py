@@ -15,6 +15,10 @@ class ChessGameState(PieceGameState, ABC):
         else:
             self.kings = []
 
+    def crown_kings(self, *kings):
+        for king in kings:
+            self.kings.append(king)
+
 
 class ChessGame(PieceGame, ABC):
     """
@@ -31,16 +35,16 @@ class ChessGame(PieceGame, ABC):
         in_check = False
         if game_state.kings:
             for king in game_state.kings:
-                if king.player == player and king.attacked():
+                if king.player == player and king.attacked(game_state):
                     in_check = True
         return in_check
 
     def player_legal_moves(self, game_state, player):
         legal = []
-        for moves in self.piece_legal_moves(game_state, player):
-            self.make_move(game_state=game_state, move=CombinationMove(*moves))
+        for move in self.piece_legal_moves(game_state, player):
+            self.make_move(game_state=game_state, move=move)
             if not self.in_check(game_state=game_state, player=player):
-                legal.append(moves)
+                legal.append(move)
             self.revert(game_state)
         return legal
 
@@ -63,26 +67,24 @@ class ChessGame(PieceGame, ABC):
 
     def legal_moves(self, game_state):
         index_player = GameStatePlayerChange(game_state, game_state.player_to_move.turn())
-        update_players = [self.evaluate_player_status(game_state, player) for player in game_state.players()]
+        update_players = tuple([self.evaluate_player_status(game_state, player) for player in game_state.players()])
         moves = self.player_legal_moves(game_state, game_state.player_to_move)
-        print('--------')
-        print(game_state)
-        print(moves)
-        if not game_state.players([PlayOn()]):
+
+        if not game_state.players(PlayOn()):
             return []
         elif game_state.player_to_move.status == PlayOn():
-            if game_state.player_legal_moves(game_state.player_to_move):
-                return CombinationMove(index_player, update_players, *moves)
+            if self.player_legal_moves(game_state, game_state.player_to_move):
+                return [CombinationMove(index_player, *update_players, move) for move in moves]
 
             elif self.in_check(game_state, game_state.player_to_move):
                 game_state.player_to_move.status = Lose()
-                return CombinationMove(index_player, update_players)
+                return [CombinationMove(index_player, *update_players)]
 
             else:
                 game_state.player_to_move.status = self.stalemate_consequence
-                return CombinationMove(index_player, update_players)
+                return [CombinationMove(index_player, *update_players)]
         else:
-            return CombinationMove(index_player, update_players)
+            return [CombinationMove(index_player, *update_players)]
 
     def utility(self, game_state):
         total_utility = sum(map(len, map(lambda x: self.player_legal_moves(game_state, x), game_state.players())))
@@ -92,6 +94,6 @@ class ChessGame(PieceGame, ABC):
             if player.status == PlayOn():
                 score[player] = player.status.value(total_utility) * player_utility
             else:
-                score[player] = player.status.value(len(game_state.players))
+                score[player] = player.status.value(len(game_state.players()))
         return score
 

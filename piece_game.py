@@ -64,13 +64,12 @@ class PieceGame(Game, ABC):
         return legal
 
     def make_move(self, game_state, move):
-        revert_move = move.anti_move()
         move.execute_move(game_state)
-        game_state.history.append(revert_move)
+        game_state.history.append(move)
 
     def revert(self, game_state):
         if game_state.history:
-            revert_move = game_state.history.pop(-1)
+            revert_move = game_state.history.pop(-1).anti_move()
             revert_move.execute_move(game_state)
             return True
         else:

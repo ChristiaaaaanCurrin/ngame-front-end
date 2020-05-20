@@ -127,7 +127,6 @@ def n_max(game, game_state, max_depth):
     depth = 0  # start at depth 0
 
     while True:
-        # print(move_tree)
         # Starting from a new position
         player_to_maximize = game_state.player_to_move
 
@@ -135,7 +134,7 @@ def n_max(game, game_state, max_depth):
         if depth != max_depth and move_tree[-1]:  # if in the middle of an unexplored branch of the game state tree
             move = move_tree[-1].pop(0)  # grab the first unexplored move and remove it from the move tree
 
-            game.make_move(move, game_state)  # make the move on the game state to convert to child game state
+            game.make_move(move=move, game_state=game_state)  # make the move on the game_state
             utility_tree.append([])  # tack on an empty list for utilities
             move_tree.append(game.legal_moves(game_state))  # every legal move from the new game state is a new branch
             depth = depth + 1  # record the change in depth
@@ -143,6 +142,8 @@ def n_max(game, game_state, max_depth):
 
         # Nowhere to go down? Go up.
         else:
+            print(game_state)
+            print(utility_tree)
             if (not game.legal_moves(game_state)) or (depth == max_depth):  # only need utility from bottom of the tree
                 utility_tree[-1].append(game.utility(game_state))  # add utility to the list of the parent
 
