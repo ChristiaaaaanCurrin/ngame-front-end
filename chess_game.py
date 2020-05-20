@@ -90,8 +90,8 @@ class ChessGame(PieceGame, ABC):
         total_utility = sum(map(len, map(lambda x: self.player_legal_moves(game_state, x), game_state.players())))
         score = {}
         for player in game_state.players():
-            player_utility = len(self.player_legal_moves(game_state=game_state, player=player))
             if player.status == PlayOn():
+                player_utility = len(self.player_legal_moves(game_state=game_state, player=player))
                 score[player] = player.status.value(total_utility) * player_utility
             else:
                 score[player] = player.status.value(len(game_state.players()))

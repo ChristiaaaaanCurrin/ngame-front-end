@@ -23,6 +23,8 @@ class PieceGameState(GameState, ABC):
 
     def __repr__(self):
         string = str(self.player_to_move) + ' to move'
+        for player in self.players():
+            string = string + '\n' + str(player) + ' ' + str(player.status)
         for piece in self.pieces():
             string = string + '\n' + str(piece)
         return string
