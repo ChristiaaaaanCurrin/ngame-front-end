@@ -1,17 +1,31 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from equality_modifiers import EqualityByType
 
 
 # Basic Player Status Classes
 
-class PlayerStatus(EqualityByType, ABC):
-    @abstractmethod
-    def value(self, total):
-        pass
+class PlayerStatus(Enum):
+    WIN = 1
+    LOSE = 0
+    DRAW = -2
+    PLAY_ON = -1
 
+    def utility_value(self, total):
+        if self == PlayerStatus.WIN:
+            return 1
+        elif self == PlayerStatus.LOSE:
+            return 0
+        elif self == PlayerStatus.PLAY_ON:
+            return 1 / total
+        elif self == PlayerStatus.DRAW:
+            return 1 / total
+        else:
+            return 9999
 
+'''
 class Win(PlayerStatus):
-    def value(self, total):
+    def utility_value(self, total):
         return 1
 
     def __repr__(self):
@@ -19,7 +33,7 @@ class Win(PlayerStatus):
 
 
 class Lose(PlayerStatus):
-    def value(self, total):
+    def utility_value(self, total):
         return 0
 
     def __repr__(self):
@@ -27,7 +41,7 @@ class Lose(PlayerStatus):
 
 
 class Draw(PlayerStatus):
-    def value(self, total):
+    def utility_value(self, total):
         return 1 / total
 
     def __repr__(self):
@@ -41,12 +55,13 @@ class PlayOn(PlayerStatus):
     def __repr__(self):
         return 'PlayOn'
 
+'''
 
 # Basic Player Classes
 
 class Player(ABC):
     def __init__(self):
-        self.status = PlayOn()
+        self.status = PlayerStatus.PLAY_ON
 
     @abstractmethod
     def turn(self):

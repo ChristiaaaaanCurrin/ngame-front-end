@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from piece_game import PieceGameState, PieceGame
-from player import Win, Lose, Draw, PlayOn
+from player import PlayerStatus
 from move import PlayerStatusChange, Pass, CombinationMove, GameStatePlayerChange
 
 
@@ -27,7 +27,7 @@ class ChessGame(PieceGame, ABC):
     loose the game and receive a score of 0. the remaining 1 point is divided evenly among players that have not lost
     by the end of the game.
     """
-    def __init__(self, stalemate_consequence=Draw(), multiple_winners=False):
+    def __init__(self, stalemate_consequence=PlayerStatus.DRAW, multiple_winners=False):
         self.multiple_winners = multiple_winners
         self.stalemate_consequence = stalemate_consequence
 
@@ -50,18 +50,18 @@ class ChessGame(PieceGame, ABC):
 
     def evaluate_player_status(self, game_state, player):
 
-        if player.status == PlayOn():
-            if game_state.players(PlayOn(), not_player=player):
+        if player.status == PlayerStatus.PLAY_ON:
+            if game_state.players(PlayerStatus.PLAY_ON, not_player=player):
                 return Pass()
 
-            elif (not self.multiple_winners) and game_state.players(Win(), not_player=player):
-                return PlayerStatusChange(player, Lose())
+            elif (not self.multiple_winners) and game_state.players(PlayerStatus.WIN, not_player=player):
+                return PlayerStatusChange(player, PlayerStatus.LOSE)
 
-            elif not game_state.players(Win(), Draw(), PlayOn(), not_player=player):
-                return PlayerStatusChange(player, Win())
+            elif not game_state.players(PlayerStatus.DRAW, not_player=player):
+                return PlayerStatusChange(player, PlayerStatus.WIN)
 
             else:
-                return PlayerStatusChange(player, Draw())
+                return PlayerStatusChange(player, PlayerStatus.DRAW)
         else:
             return Pass()
 
@@ -70,14 +70,14 @@ class ChessGame(PieceGame, ABC):
         update_players = tuple([self.evaluate_player_status(game_state, player) for player in game_state.players()])
         moves = self.player_legal_moves(game_state, game_state.player_to_move)
 
-        if not game_state.players(PlayOn()):
+        if not game_state.players(PlayerStatus.PLAY_ON):
             return []
-        elif game_state.player_to_move.status == PlayOn():
+        elif game_state.player_to_move.status == PlayerStatus.PLAY_ON:
             if self.player_legal_moves(game_state, game_state.player_to_move):
                 return [CombinationMove(index_player, *update_players, move) for move in moves]
 
             elif self.in_check(game_state, game_state.player_to_move):
-                game_state.player_to_move.status = Lose()
+                game_state.player_to_move.status = PlayerStatus.LOSE
                 return [CombinationMove(index_player, *update_players)]
 
             else:
@@ -90,7 +90,7 @@ class ChessGame(PieceGame, ABC):
         total_utility = sum(map(len, map(lambda x: self.player_legal_moves(game_state, x), game_state.players())))
         score = {}
         for player in game_state.players():
-            if player.status == PlayOn():
+            if player.status == PlayerStatus.PLAY_ON:
                 player_utility = len(self.player_legal_moves(game_state=game_state, player=player))
                 score[player] = player.status.value(total_utility) * player_utility
             else:

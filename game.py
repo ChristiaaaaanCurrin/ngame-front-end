@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from equality_modifiers import EqualityByType
-from player import PlayOn
+from player import PlayerStatus
 import numpy as np
 
 
@@ -23,9 +23,6 @@ class GameState(ABC):
             self.player_to_move = player_to_move
         else:
             self.player_to_move = players[0]
-
-        for player in self.all_players:
-            player.status = PlayOn()
 
     def players(self, *player_statuses, not_player=None):
         players = []
