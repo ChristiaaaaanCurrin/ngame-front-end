@@ -1,67 +1,39 @@
 from abc import ABC, abstractmethod
-from enum import Enum
-from equality_modifiers import EqualityByType
+from equality_modifiers import EqualityByArgs
 
 
 # Basic Player Status Classes
 
-class PlayerStatus(Enum):
-    WIN = 1
-    LOSE = 0
-    DRAW = -2
-    PLAY_ON = -1
+class PlayerStatus(EqualityByArgs):
+    def __init__(self, tag, score, active):
+        super().__init__(tag, score, active)
+        self.tag = tag
+        self.score = score
+        self.active = active
 
-    def utility_value(self, total):
-        if self == PlayerStatus.WIN:
-            return 1
-        elif self == PlayerStatus.LOSE:
-            return 0
-        elif self == PlayerStatus.PLAY_ON:
-            return 1 / total
-        elif self == PlayerStatus.DRAW:
-            return 1 / total
+    def utility_value(self, player_utility=1, total_utility=1):
+        if self.score:
+            return self.score
         else:
-            return 9999
-
-'''
-class Win(PlayerStatus):
-    def utility_value(self, total):
-        return 1
+            return player_utility / total_utility
 
     def __repr__(self):
-        return 'Win'
+        return str(self.tag)
 
 
-class Lose(PlayerStatus):
-    def utility_value(self, total):
-        return 0
+# Basic Player Statuses
 
-    def __repr__(self):
-        return 'Lose'
+win = PlayerStatus('w', 1, False)
+lose = PlayerStatus('l', 0, False)
+draw = PlayerStatus('d', None, False)
+play_on = PlayerStatus('a', None, True)
 
-
-class Draw(PlayerStatus):
-    def utility_value(self, total):
-        return 1 / total
-
-    def __repr__(self):
-        return 'Draw'
-
-
-class PlayOn(PlayerStatus):
-    def value(self, total):
-        return 1 / total
-
-    def __repr__(self):
-        return 'PlayOn'
-
-'''
 
 # Basic Player Classes
 
 class Player(ABC):
     def __init__(self):
-        self.status = PlayerStatus.PLAY_ON
+        self.status = play_on
 
     @abstractmethod
     def turn(self):

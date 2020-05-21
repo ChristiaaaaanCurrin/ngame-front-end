@@ -58,6 +58,10 @@ class PieceGame(Game, ABC):
     have, at minimum, a player that the piece belongs to, a location that helps track the consequences of moves, and
     a method returning a list of legal moves that describes how the pieces are able to influence a game_state.
     """
+    def __init__(self, force_move=True):
+
+        self.force_move = force_move
+
     def piece_legal_moves(self, game_state, player):
         legal = []
         for piece in game_state.pieces(player):
@@ -67,6 +71,8 @@ class PieceGame(Game, ABC):
 
     def make_move(self, game_state, move):
         move.execute_move(game_state)
+        for player in game_state.players():
+            self.evaluate_player_status(game_state, player).execute_move(game_state)
         game_state.history.append(move)
 
     def revert(self, game_state):

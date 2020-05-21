@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from piece_game import PieceGameState, PieceGame
-from player import PlayerStatus
+from player import win, lose, draw, play_on
 from move import PlayerStatusChange, Pass, CombinationMove, GameStatePlayerChange
 
 
@@ -27,7 +27,8 @@ class ChessGame(PieceGame, ABC):
     loose the game and receive a score of 0. the remaining 1 point is divided evenly among players that have not lost
     by the end of the game.
     """
-    def __init__(self, stalemate_consequence=PlayerStatus.DRAW, multiple_winners=False):
+    def __init__(self, stalemate_consequence=draw, multiple_winners=False, force_move=True):
+        super().__init__(force_move)
         self.multiple_winners = multiple_winners
         self.stalemate_consequence = stalemate_consequence
 
@@ -50,50 +51,56 @@ class ChessGame(PieceGame, ABC):
 
     def evaluate_player_status(self, game_state, player):
 
-        if player.status == PlayerStatus.PLAY_ON:
-            if game_state.players(PlayerStatus.PLAY_ON, not_player=player):
+        if player.status == play_on:
+            if game_state.players(play_on, not_player=player):
                 return Pass()
 
-            elif (not self.multiple_winners) and game_state.players(PlayerStatus.WIN, not_player=player):
-                return PlayerStatusChange(player, PlayerStatus.LOSE)
+            elif (not self.multiple_winners) and game_state.players(win, not_player=player):
+                return PlayerStatusChange(player, lose)
 
-            elif not game_state.players(PlayerStatus.DRAW, not_player=player):
-                return PlayerStatusChange(player, PlayerStatus.WIN)
+            elif not game_state.players(draw, not_player=player):
+                return PlayerStatusChange(player, win)
 
             else:
-                return PlayerStatusChange(player, PlayerStatus.DRAW)
+                return PlayerStatusChange(player, draw)
         else:
             return Pass()
 
     def legal_moves(self, game_state):
-        index_player = GameStatePlayerChange(game_state, game_state.player_to_move.turn())
-        update_players = tuple([self.evaluate_player_status(game_state, player) for player in game_state.players()])
+        index_player = GameStatePlayerChange(game_state.player_to_move, game_state.player_to_move.turn())
+        #update_players = tuple([self.evaluate_player_status(game_state, player) for player in game_state.players()])
         moves = self.player_legal_moves(game_state, game_state.player_to_move)
 
-        if not game_state.players(PlayerStatus.PLAY_ON):
+        if not game_state.players(play_on):
             return []
-        elif game_state.player_to_move.status == PlayerStatus.PLAY_ON:
+        elif game_state.player_to_move.status == play_on:
             if self.player_legal_moves(game_state, game_state.player_to_move):
-                return [CombinationMove(index_player, *update_players, move) for move in moves]
+                return [CombinationMove(index_player, move) for move in moves]  # *update_players
 
             elif self.in_check(game_state, game_state.player_to_move):
-                game_state.player_to_move.status = PlayerStatus.LOSE
-                return [CombinationMove(index_player, *update_players)]
+                game_state.player_to_move.status = lose
+                return [index_player]  # *update_players
 
             else:
                 game_state.player_to_move.status = self.stalemate_consequence
-                return [CombinationMove(index_player, *update_players)]
+                return [index_player]  # *update_players
         else:
-            return [CombinationMove(index_player, *update_players)]
+            return [index_player]  # *update_players
 
     def utility(self, game_state):
-        total_utility = sum(map(len, map(lambda x: self.player_legal_moves(game_state, x), game_state.players())))
+        total_utility2 = sum(map(len, map(lambda x: self.player_legal_moves(game_state, x), game_state.players())))
+        total_utility = 0
+        for player in game_state.players():
+            print(self.player_legal_moves(game_state, player))
+            total_utility = total_utility + len(self.player_legal_moves(game_state, player))
+        print(total_utility)
         score = {}
         for player in game_state.players():
-            if player.status == PlayerStatus.PLAY_ON:
+            if player.status.active:
                 player_utility = len(self.player_legal_moves(game_state=game_state, player=player))
-                score[player] = player.status.value(total_utility) * player_utility
+                print(player_utility)
+                score[player] = player.status.utility_value(player_utility=player_utility, total_utility=total_utility)
             else:
-                score[player] = player.status.value(len(game_state.players()))
+                score[player] = player.status.utility_value(total_utility=len(game_state.players()))
         return score
 

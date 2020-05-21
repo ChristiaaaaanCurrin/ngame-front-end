@@ -28,6 +28,9 @@ class CombinationMove(Move):
     def __eq__(self, other):
         return self.components == other.components
 
+    def __repr__(self):
+        return 'CombinationMove' + str(self.components)
+
     def add_move(self, move):
         self.components = self.components + tuple([move])
 
@@ -89,13 +92,16 @@ class PlayerStatusChange(Move):
 
 
 class GameStatePlayerChange(Move, EqualityByArgs):
-    def __init__(self, game_state, new_player_to_move):
+    def __init__(self, current_player_to_move, new_player_to_move):
         super().__init__()
-        self.game_state = game_state
+        self.old_player_to_move = current_player_to_move
         self.new_player_to_move = new_player_to_move
 
+    def __repr__(self):
+        return str(self.old_player_to_move) + ' -> ' + str(self.new_player_to_move)
+
     def anti_move(self):
-        return GameStatePlayerChange(self.game_state, self.game_state.player_to_move)
+        return GameStatePlayerChange(self.new_player_to_move, self.old_player_to_move)
 
     def execute_move(self, game_state):
         game_state.player_to_move = self.new_player_to_move
