@@ -120,3 +120,7 @@ if __name__ == '__main__':
 
     print(n_max(test_game, test_game_state, 6))
 
+    print(test_game_state)
+    for player in test_game_state.players():
+        print(player)
+        print(test_game.player_legal_moves(test_game_state, player))
