@@ -32,13 +32,14 @@ class PieceMoveAddRemove(Move):
         """
         self.piece = piece
         self.new_location = new_location
-        self.remove = not new_location  # pieces moved to new_location = None are "removed" or "captured"
+        self.old_location = self.piece.location
+        self.remove = not new_location  # pieces moved to new_location=None are "removed" or "captured"
 
     def __repr__(self):
         return str(self.piece) + ' -> ' + str(self.new_location)
 
     def anti_move(self):
-        return PieceMoveAddRemove(self.piece, self.piece.location)
+        return PieceMoveAddRemove(self.piece, self.old_location)
 
     def execute_move(self, game_state):
         self.piece.location = self.new_location

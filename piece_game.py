@@ -22,9 +22,10 @@ class PieceGameState(GameState, ABC):
             self.history = []
 
     def __repr__(self):
-        string = str(self.player_to_move) + ' to move'
+        string = ''
         for player in self.players():
-            string = string + '\n' + str(player) + ' ' + str(player.status)
+            string = string + str(player) + ' ' + str(player.status) + ', '
+        string = string + '\n' + str(self.player_to_move) + ' to move,'
         for piece in self.pieces():
             string = string + '\n' + str(piece)
         return string
@@ -59,7 +60,6 @@ class PieceGame(Game, ABC):
     a method returning a list of legal moves that describes how the pieces are able to influence a game_state.
     """
     def __init__(self, force_move=True):
-
         self.force_move = force_move
 
     def piece_legal_moves(self, game_state, player):

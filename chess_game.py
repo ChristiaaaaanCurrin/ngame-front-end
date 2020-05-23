@@ -68,39 +68,36 @@ class ChessGame(PieceGame, ABC):
 
     def legal_moves(self, game_state):
         index_player = GameStatePlayerChange(game_state.player_to_move, game_state.player_to_move.turn())
-        #update_players = tuple([self.evaluate_player_status(game_state, player) for player in game_state.players()])
         moves = self.player_legal_moves(game_state, game_state.player_to_move)
 
         if not game_state.players(play_on):
             return []
         elif game_state.player_to_move.status == play_on:
             if self.player_legal_moves(game_state, game_state.player_to_move):
-                return [CombinationMove(index_player, move) for move in moves]  # *update_players
+                return [CombinationMove(index_player, move) for move in moves]
 
             elif self.in_check(game_state, game_state.player_to_move):
                 game_state.player_to_move.status = lose
-                return [index_player]  # *update_players
+                return [index_player]
 
             else:
                 game_state.player_to_move.status = self.stalemate_consequence
-                return [index_player]  # *update_players
+                return [index_player]
         else:
-            return [index_player]  # *update_players
+            return [index_player]
 
     def utility(self, game_state):
-        total_utility2 = sum(map(len, map(lambda x: self.player_legal_moves(game_state, x), game_state.players())))
         total_utility = 0
         for player in game_state.players():
-            print(self.player_legal_moves(game_state, player))
             total_utility = total_utility + len(self.player_legal_moves(game_state, player))
-        print(total_utility)
+
         score = {}
         for player in game_state.players():
             if player.status.active:
                 player_utility = len(self.player_legal_moves(game_state=game_state, player=player))
-                print(player_utility)
                 score[player] = player.status.utility_value(player_utility=player_utility, total_utility=total_utility)
             else:
                 score[player] = player.status.utility_value(total_utility=len(game_state.players()))
+
         return score
 

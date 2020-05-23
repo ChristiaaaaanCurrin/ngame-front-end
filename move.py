@@ -80,12 +80,13 @@ class PlayerStatusChange(Move):
         """
         self.player = player
         self.new_status = new_status
+        self.old_status = self.player.status
 
     def __repr__(self):
         return str(self.player) + ' -> ' + str(self.new_status)
 
     def anti_move(self):
-        return PlayerStatusChange(self.player, self.player.status)
+        return PlayerStatusChange(self.player, self.old_status)
 
     def execute_move(self, game_state):
         self.player.status = self.new_status

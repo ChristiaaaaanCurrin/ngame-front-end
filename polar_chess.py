@@ -108,7 +108,7 @@ if __name__ == '__main__':
     test_game_state = test_game.default_game_state()
 
     points = [(0, 0), (3, 12)]
-    test_pieces = []
+    test_pieces = []ch
     player = test_game_state.player_to_move
     for point in points:
         player = player.turn()
@@ -121,6 +121,6 @@ if __name__ == '__main__':
     print(n_max(test_game, test_game_state, 6))
 
     print(test_game_state)
-    for player in test_game_state.players():
-        print(player)
-        print(test_game.player_legal_moves(test_game_state, player))
+    print(test_pieces[1].legal_moves(test_game_state))
+    print(test_game.player_legal_moves(test_game_state, test_game_state.player_to_move))
+    print(test_game_state)

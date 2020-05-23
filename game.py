@@ -139,8 +139,6 @@ def n_max(game, game_state, max_depth):
 
         # Nowhere to go down? Go up.
         else:
-            print(game_state)
-            print(utility_tree)
             if (not game.legal_moves(game_state)) or (depth == max_depth):  # only need utility from bottom of the tree
                 utility_tree[-1].append(game.utility(game_state))  # add utility to the list of the parent
 
