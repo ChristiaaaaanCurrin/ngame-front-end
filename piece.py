@@ -67,7 +67,7 @@ class PiecePlayerChange(Move):
 
 # Basic Piece Classes
 
-class Piece(ABC, EqualityByArgs):
+class SubordinatePiece(ABC, EqualityByArgs):
     """
     Piece contains the minimum requirements for a piece: game_state, player, location, legal_moves().
     """
@@ -110,7 +110,7 @@ class Piece(ABC, EqualityByArgs):
         return attacked
 
 
-class SimpleMovePiece(Piece, ABC):
+class SimpleMovePiece(SubordinatePiece, ABC):
     """
     A SimpleMovePiece is a Piece whose legal moves only involve going from one location to another and capturing
     (removing) other pieces. A SimpleMovePiece must have a method returning the locations accessible to self and

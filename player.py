@@ -25,7 +25,7 @@ class PlayerStatus(EqualityByArgs):
 
 win = PlayerStatus('w', 1, False)
 lose = PlayerStatus('l', 0, False)
-draw = PlayerStatus('d', None, False)
+draw = PlayerStatus('d', 0.6, False)
 play_on = PlayerStatus('a', None, True)
 
 
