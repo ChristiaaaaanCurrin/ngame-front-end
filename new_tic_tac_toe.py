@@ -91,8 +91,11 @@ class TicTacToeGameState(GameState):
 test_game = TicTacToeGameState()
 test_players = instantiate_pieces_from_integer(TicTacToePlayer, 2)
 print(test_game)
+"""
 for m in range(2):
     if test_game.legal_moves():
         test_game.legal_moves()[0].execute_move(test_game)
     print(test_game)
+"""
 print(max_n(game_state=test_game, max_depth=10))
+print(test_game)

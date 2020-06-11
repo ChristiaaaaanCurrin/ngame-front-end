@@ -53,10 +53,10 @@ class TopTurnToken(SimpleTurnToken):
         return legal
 
 
-def instantiate_pieces_from_integer(piece_class, number_of_players):
-    players = [piece_class(None, number_of_players)]
-    for n in range(number_of_players-1):
-        players.append(piece_class(players[n], number_of_players-1-n))
-    players[0].successor = players[-1]
-    players.reverse()
-    return players
+def instantiate_pieces_from_integer(piece_class, number_of_pieces):
+    pieces = [piece_class(None, number_of_pieces)]
+    for n in range(number_of_pieces - 1):
+        pieces.append(piece_class(pieces[n], number_of_pieces - 1 - n))
+    pieces[0].successor = pieces[-1]
+    pieces.reverse()
+    return pieces

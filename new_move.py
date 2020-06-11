@@ -51,6 +51,9 @@ class CombinationMove(Move):
 
 
 class RecordMove(CombinationMove):
+    def __repr__(self):
+        return 'RecordMove' + str(self.components)
+
     def execute_move(self, game_state):
         for component in self.components:
             component.execute_move(game_state)

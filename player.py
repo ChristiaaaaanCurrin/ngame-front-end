@@ -12,7 +12,7 @@ class PlayerStatus(EqualityByArgs):
         self.active = active
 
     def utility_value(self, player_utility=1, total_utility=1):
-        if self.score:
+        if self.score is not None:
             return self.score
         else:
             return player_utility / total_utility
@@ -25,7 +25,7 @@ class PlayerStatus(EqualityByArgs):
 
 win = PlayerStatus('w', 1, False)
 lose = PlayerStatus('l', 0, False)
-draw = PlayerStatus('d', 0.6, False)
+draw = PlayerStatus('d', None, False)
 play_on = PlayerStatus('a', None, True)
 
 

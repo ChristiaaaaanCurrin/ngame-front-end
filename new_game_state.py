@@ -41,6 +41,9 @@ class GameState(ABC):
             pieces = self.all_pieces
         return pieces
 
+    def tokens(self, player):
+        pass
+
     def legal_moves(self):
         return self.top_token.legal_moves(self)
 
