@@ -108,7 +108,7 @@ if __name__ == '__main__':
     test_game_state = test_game.default_game_state()
 
     points = [(0, 0), (3, 12)]
-    test_pieces = []ch
+    test_pieces = []
     player = test_game_state.player_to_move
     for point in points:
         player = player.turn()
