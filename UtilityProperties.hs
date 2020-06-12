@@ -4,58 +4,42 @@ data GameState m p = GameState {players :: [p], turn :: p}
 
 type Utility s p v = (s -> p -> v)
 
-data Inf a = MINF | Finite a | INF deriving (Eq, Show, Read)
 
-instance (Num a, Eq a) => Num (Inf a) where
-  signum MINF       = signum $ fromInteger (-1)
-  signum INF        = signum $ fromInteger   1
-  signum (Finite x) = Finite (signum x)
+maxElem :: Ord b => (a -> b) -> [a] -> a
+maxElem f (x:[]) = x
+maxElem f (x:y:xs)
+  | f x < f y = maxElem f (y:xs)
+  | otherwise = maxElem f (x:xs)
 
-  negate INF        = MINF
-  negate MINF       = INF
-  negate (Finite x) = Finite (negate x)
-
-  INF      + MINF     = Finite 0
-  INF      + _        = INF
-  _        + MINF     = MINF
-  Finite x + Finite y = Finite (x + y)
-  x        + y        = y + x
-
-  fromInteger x = Finite (fromInteger x)
-
-  abs INF        = INF
-  abs MINF       = INF
-  abs (Finite x) = Finite (abs x)
-  
-  INF * x
-    | x        == Finite 0      = 0
-    | signum x == fromInteger 1 = INF
-    | otherwise                 = MINF
-  MINF * x = negate $ INF * x
-  (Finite x) * (Finite y) = Finite (x * y)
-  x * y = y * x
+minElem :: Ord b => (a -> b) -> [a] -> a
+minElem f (x:[]) = x
+minElem f (x:y:xs)
+  | f x > f y = minElem f (y:xs)
+  | otherwise = minElem f (x:xs)
 
 
-max_elem :: Ord b => (a -> b) -> [a] -> a
-max_elem f (x:[]) = x
-max_elem f (x:y:xs)
-  | f x > f y = max_elem f (x:xs)
-  | otherwise = max_elem f (y:xs)
+max_n :: (Ord v, Num v) => Utility (GameState m p) p v -> Game (GameState m p) m p v -> v -> GameState m p -> p -> v
+max_n u g 0 s p = u s p
+max_n u g d s p
+  | null $ legal g s = u s p
+  | otherwise        = maxElem ($ turn s) [max_n u g (d-1) ns | ns <- [execute g s m | m <- legal g s]] $ p 
 
-max_n :: (Ord v, Integral a) => Utility (GameState m p) p v -> Game (GameState m p) m p v -> a -> GameState m p -> p -> v
-max_n u g 0 s = u s $ turn s
-max_n u g d s
-  | null $ legal g s = u s $ turn s
-  | otherwise        = maximum [max_n u g (d-1) ns | ns <- [execute g s m | m <- legal g s]] 
+bestLine  :: Ord v => Utility (GameState m p) p v -> Game (GameState m p) m p v -> p -> GameState m p -> GameState m p
+bestLine  u g p s = maxElem (flip u p) [execute g s m | m <- legal g s]
 
-bestLine :: Ord v => Utility (GameState m p) p v -> Game (GameState m p) m p v -> GameState m p -> GameState m p
-bestLine u g s = max_elem (flip u (turn s)) [execute g s m | m <- legal g s]
+worstLine :: Ord v => Utility (GameState m p) p v -> Game (GameState m p) m p v -> p -> GameState m p -> GameState m p
+worstLine u g p s = minElem (flip u p) [execute g s m | m <- legal g s]
+
+nearPref :: (Num v, Ord v) => Int -> Utility (GameState m p) p v -> Utility (GameState m p) p v -> Game (GameState m p) m p v -> GameState m p -> v
+nearPref k v u g s = (1 + d) * (u s p)
+  where p = maxElem (v s) $ players s
+        d
+         | any (\x -> v s p /= v x p) $ take k $ iterate (worstLine v g p) s = 0
+         | otherwise = head $ filter (\x -> any (\y -> v s p /= v y p) $ take k $ iterate (bestLine (max_n u g x) g p) s) $ map fromInteger [1..]
+
+--DON'T HAVE TO ITERATE!!! TRUST VALUE FUNCTION AND JUST GO 1 LEVEL DOWN.
 
 {-
-nearPref :: (Ord v) => Utility (GameState m p) p v -> Game (GameState m p) m p v -> GameState m p -> v
-nearPref v u g s = max_n v g  
-
-
  ,,
 /  \\
  /  \_____ ~,
