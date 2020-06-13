@@ -37,6 +37,18 @@ nearPref k v u g s = (1 + d) * (u s p)
          | any (\x -> v s p /= v x p) $ take k $ iterate (worstLine v g p) s = 0
          | otherwise = head $ filter (\x -> any (\y -> v s p /= v y p) $ take k $ iterate (bestLine (max_n u g x) g p) s) $ map fromInteger [1..]
 
+
+nearPref' :: (Num v, Ord v) => Utility (GameState m p) p v -> Utility (GameState m p) p v -> Game (GameState m p) m p v -> GameState m p -> v
+nearPref' v u g s = (1 + d) * (u s p)
+  where p = maxElem (v s) $ players s
+        d
+         | v s p /= v (worstLine v g p s) p = 0
+         | otherwise = head $ filter (\x -> v s p /= v (bestLine (max_n u g x) g p s) p) $ map fromInteger [1..]
+
+
+
+
+
 --DON'T HAVE TO ITERATE!!! TRUST VALUE FUNCTION AND JUST GO 1 LEVEL DOWN.
 
 {-

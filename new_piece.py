@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from new_move import CombinationMove, TokenOwnerChange, RecordMove
 from equality_modifiers import EqualityByType, EqualityByArgs
-from player import PlayerStatus, play_on
 
 
 class Piece(ABC):
@@ -11,20 +10,6 @@ class Piece(ABC):
 
     @abstractmethod
     def legal_moves(self, game_state):
-        pass
-
-
-class Player(Piece, ABC):
-    def __init__(self, successor, tag, status=play_on):
-        super().__init__(player=self, successor=successor)
-        self.status = status
-        self.tag = tag
-
-    def __repr__(self):
-        return 'p' + str(self.tag)
-
-    @abstractmethod
-    def utility(self, game_state):
         pass
 
 

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from equality_modifiers import EqualityByArgs
-
+from new_piece import Piece
 
 # Basic Player Status Classes
 
@@ -31,34 +31,16 @@ play_on = PlayerStatus('a', None, True)
 
 # Basic Player Classes
 
-class Player(ABC):
-    def __init__(self):
-        self.status = play_on
-
-    @abstractmethod
-    def turn(self):
-        pass
-
-
-class SimplePlayer(Player):
-    def __init__(self, successor, tag):
-        super().__init__()
-        self.next = successor
+class Player(Piece, ABC):
+    def __init__(self, successor, tag, status=play_on):
+        super().__init__(player=self, successor=successor)
+        self.status = status
         self.tag = tag
 
     def __repr__(self):
         return 'p' + str(self.tag)
 
-    def turn(self):
-        return self.next
+    @abstractmethod
+    def utility(self, game_state):
+        pass
 
-
-# Static Methods
-
-def simple_players_from_integer(number_of_players):
-    players = [SimplePlayer(None, number_of_players)]
-    for n in range(number_of_players-1):
-        players.append(SimplePlayer(players[n], number_of_players-1-n))
-    players[0].next = players[-1]
-    players.reverse()
-    return players
