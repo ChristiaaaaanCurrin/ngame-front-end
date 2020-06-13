@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from equality_modifiers import EqualityByArgs
-from new_piece import Piece
+from piece import Piece
 
 # Basic Player Status Classes
 

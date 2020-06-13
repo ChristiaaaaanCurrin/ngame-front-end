@@ -1,7 +1,7 @@
-from new_piece import instantiate_pieces_from_integer, TopTurnToken
+from piece import instantiate_pieces_from_integer, TopTurnToken
 from player import Player, play_on, win, draw, lose
-from new_move import Move, PlayerStatusChange, CombinationMove
-from new_game_state import GameState, max_n
+from move import Move, PlayerStatusChange, CombinationMove
+from game_state import GameState, max_n
 
 
 class TicTacToeMove(Move):

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from new_move import CombinationMove, TokenOwnerChange, RecordMove
+from move import CombinationMove, TokenOwnerChange, RecordMove
 from equality_modifiers import EqualityByType, EqualityByArgs
 
 

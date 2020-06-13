@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 from equality_modifiers import EqualityByArgs
 from move import CombinationMove
-from game import dictionary_max
-
-# keep me
+import numpy as np
 
 
 class GameState(ABC):
@@ -114,3 +112,37 @@ def max_n(game_state, max_depth):
                 break
     return n_max_utility  # don't forget why you came here
 
+
+def neural_net_training_data(game, game_state, n_max_depth, batch_size):
+    """
+    creates a list containing 'batch size' tuples of inputs and outputs for the neural net
+    inputs are lists of values that contain all the information for the position
+    outputs are lists of values that contain the n_max evaluation for the position to depth 'n_max_depth'
+    :param game: game of game_state
+    :param game_state: game state to be evaluated
+    :param n_max_depth: integer, indicates the depth to which the neural net inputs are evaluated
+    :param batch_size: integer, indicates the number of positions used as training data
+    :return: list of tuples of lists of values
+    """
+    training_data = []
+    for i in range(batch_size):
+        game.randomize_position(game_state)  # create random position
+        neural_net_output = []
+        for player in game_state.players:
+            neural_net_output.append(max_n(game_state, n_max_depth)[player])  # generate output from n_max function
+        training_data.append((np.asarray(game.neural_net_input(game_state)), np.asarray(neural_net_output)))
+    return training_data  # don't forget to return
+
+
+def dictionary_max(key, dictionaries):
+    """
+
+    :param key: a key in the dictionary
+    :param dictionaries: list of dictionaries with the same keys, dictionary entries must be ordered (<,> defined)
+    :return: the dictionary where the value of dictionary[key] is maximized
+    """
+    current_max = dictionaries[0]
+    for dictionary in dictionaries:
+        if dictionary[key] > current_max[key]:
+            current_max = dictionary
+    return current_max
