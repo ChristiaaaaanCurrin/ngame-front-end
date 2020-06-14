@@ -117,3 +117,23 @@ class TokenOwnerChange(Move):
 
     def anti_move(self):
         return TokenOwnerChange(self.token, self.old_owner)
+
+
+class PieceMoveAddRemove(Move):
+    def __init__(self, piece, location=None):
+        self.piece = piece
+        self.new_location = location
+        self.old_location = self.piece.location
+
+    def execute_move(self, game_state):
+        self.piece.location = self.new_location
+        if self.piece in game_state.pieces():
+            if self.new_location:
+                pass
+            else:
+                game_state.remove_pieces(self.piece)
+        elif self.new_location:
+            game_state.add_pieces(self.piece)
+
+    def anti_move(self):
+        return PieceMoveAddRemove(self.piece, self.old_location)

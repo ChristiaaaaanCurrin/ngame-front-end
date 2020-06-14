@@ -31,14 +31,15 @@ class GameState(ABC):
                 players.append(player)
         return players
 
-    def pieces(self, player=None):
-        pieces = []
-        if player:
-            for piece in self.all_pieces:
-                if piece.player == player:
-                    pieces.append(piece)
+    def pieces(self, *players):
+        if players:
+            pieces = []
         else:
             pieces = self.all_pieces
+        for piece in self.all_pieces:
+            for player in players:
+                if piece.player == player:
+                    pieces.append(piece)
         return pieces
 
     def tokens(self, player):
@@ -87,7 +88,7 @@ def max_n(game_state, max_depth):
 
             move.execute_move(game_state)  # make the move on the game_state
             utility_tree.append([])  # tack on an empty list for utilities
-            move_tree.append(game_state.legal_moves())  # every legal move from the new game state is a new branch
+            move_tree.append(game_state.legal_moves())  # every legal move from the new_game state is a new branch
             depth = depth + 1  # record the change in depth
             continue  # rerun loop from new game state
 
@@ -109,7 +110,7 @@ def max_n(game_state, max_depth):
             else:
                 # utility of the position is the best child utility for the player to move
                 n_max_utility = dictionary_max(player_to_maximize, utility_tree[-1])
-                break
+                break  # exit the loop
     return n_max_utility  # don't forget why you came here
 
 

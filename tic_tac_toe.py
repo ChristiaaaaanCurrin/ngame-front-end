@@ -1,5 +1,4 @@
-from piece import instantiate_pieces_from_integer, TopTurnToken
-from player import Player, play_on, win, draw, lose
+from piece import instantiate_pieces_from_integer, TopTurnToken, Player, play_on, win, lose, draw
 from move import Move, PlayerStatusChange, CombinationMove
 from game_state import GameState, max_n
 
