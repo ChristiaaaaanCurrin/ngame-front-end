@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+
 module UtilityProperties (Game, GameState, Utility,
-                          maxElem, minElem, max_n,
+                          maxElem, minElem, max_n, partisan_max_n,
                           bestLine, worstLine, nearPref) where
 
 
@@ -18,6 +19,7 @@ class GameState s p where
 --Any UTILITY function for a game_state
 type Utility s p v = (s -> p -> v)
 
+square x = x * x
 
 --Like maximum but returns the element from the list that produces the maximum output when used as the input to a function
 maxElem :: Ord b => (a -> b) -> [a] -> a
@@ -33,12 +35,20 @@ minElem f (x:y:xs)
   | f x > f y = minElem f (y:xs)
   | otherwise = minElem f (x:xs)
 
+
 --Compare to "max_n" in game_state.py. Haskell, I have missed you!
 max_n :: (Ord v, Num v, Move m s, GameState s p) => Utility s p v -> Game s m -> v -> s -> p -> v
 max_n u g 0 s p = u s p
 max_n u g d s p
   | null $ g s = u s p
-  | otherwise  = maxElem ($ toMove s) [max_n u (g) (d-1) ns | ns <- [execute m s | m <- g s]] $ p 
+  | otherwise  = maxElem ($ toMove s) [max_n u g (d-1) ns | ns <- [execute m s | m <- g s]] $ p 
+
+--Similar to max_n utility function is now player dependent
+partisan_max_n :: (Ord v, Num v, Move m s, GameState s p) => (p -> Utility s p v) -> Game s m -> v -> s -> p -> v
+partisan_max_n f g 0 s p = f (toMove s) s p
+partisan_max_n f g d s p
+  | null $ g s = f (toMove s) s p
+  | otherwise = maxElem ($ toMove s) [partisan_max_n f g (d-1) ns | ns <- [execute m s | m <- g s]] $ p
 
 --Returns the GameState (selected from legal moves on the current GameState) that has the hightest utility for a given player
 bestLine  :: (Ord v, GameState s p, Move m s) => Utility s p v -> Game s m -> p -> s -> s
@@ -48,9 +58,10 @@ bestLine  u g p s = maxElem (flip u p) [execute m s | m <- g s]
 worstLine  :: (Ord v, GameState s p, Move m s) => Utility s p v -> Game s m -> p -> s -> s
 worstLine  u g p s = minElem (flip u p) [execute m s | m <- g s]
 
---Scores the degeee to which a UTILITY function is NEAR PREFERENTIAL according to a gold standard VALUE function
+
+--Scores the degeee to which a UTILITY function is NEAR PREFERENTIAL according to a gold standard VALUE function (0 is perfect score)
 nearPref :: (Num v, Ord v, Move m s, GameState s p) => Utility s p v -> Utility s p v -> Game s m -> s -> v
-nearPref v u g s = (1 + d) * (u s p)
+nearPref v u g s = square $ (1 + d) * (u s p) - 1
   where p = maxElem (v s) $ players s
         d
          | v s p /= v (worstLine v g p s) p = 0

@@ -20,6 +20,10 @@ class ChessGameState(GameState):
 
 
 class ChessPlayer(Player):
+    def __init__(self, successor=None, tag=None, status=play_on, stalemate_status=draw):
+        super().__init__(successor=successor, tag=tag, status=status)
+        self.stalemate_status = stalemate_status
+
     def in_check(self, game_state):
         in_check = False
         for king in game_state.kings(self):
@@ -33,11 +37,17 @@ class ChessPlayer(Player):
 
     def legal_moves(self, game_state):
         legal = []
-        for piece in game_state.pieces(self):
-            for move in piece.legal_moves(game_state):
-                move.execute_move(game_state)
-                if self.in_check(game_state):
-                    pass
-                else:
-                    legal.append(move)
+        if self.status == play_on:
+            for piece in game_state.pieces(self):
+                for move in piece.legal_moves(game_state):
+                    move.execute_move(game_state)
+                    if self.in_check(game_state):
+                        pass
+                    else:
+                        legal.append(move)
+            if self.in_check(game_state) and not legal:
+                legal = [PlayerStatusChange(self, lose)]
+            elif not legal:
+                legal = [PlayerStatusChange(self, self.stalemate_status)]
+        p
         return legal
