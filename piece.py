@@ -85,32 +85,6 @@ class Player(Piece, ABC):
 
 
 # ---------- Subordinate Piece ---------------
-# Location
-
-class Tile(ABC):
-    def neighbors(self, board, *directions):
-        neighbors = []
-        for direction in directions:
-            neighbors.extend(direction(board, self))
-        return neighbors
-
-    def chain_neighbors(self, board, *directions, skip=Const(False), stop=Const(False)):
-        neighbors = []
-        for direction in directions:
-            edge = self.neighbors(board, direction)
-            while edge:
-                new_edge = []
-                for tile in edge:
-                    if stop(tile):
-                        break
-                    elif skip(tile):
-                        new_edge.extend(tile.neighbors(board, direction))
-                    else:
-                        neighbors.append(tile)
-                        new_edge.extend(tile.neighbors(board, direction))
-                edge = new_edge
-        return neighbors
-
 
 class SubordinatePiece(Piece, ABC):
     """
@@ -192,8 +166,9 @@ class SimpleCapturePiece(SimpleMovePiece, ABC):
 
 # INCOMPLETE
 class PatternMovePiece(SimpleMovePiece, ABC):
-    def __init__(self, player, location, successor, directions):
-        self.directions = directions
+    @abstractmethod
+    def directions(self):
+        pass
 
     @abstractmethod
     def skip_location(self, location):
@@ -203,26 +178,26 @@ class PatternMovePiece(SimpleMovePiece, ABC):
     def stop_on_location(self, location):
         pass
 
-    def neighbors(self, board, *directions):
+    def neighbors(self, game_state, *directions):
         neighbors = []
         for direction in directions:
-            neighbors.extend(direction(board, self))
+            neighbors.extend(direction(game_state, self))
         return neighbors
 
-    def chain_neighbors(self, board, *directions):
+    def accessible_locations(self, game_state):
         neighbors = []
-        for direction in directions:
-            edge = self.neighbors(board, direction)
+        for direction in self.directions():
+            edge = self.neighbors(game_state, direction)
             while edge:
                 new_edge = []
                 for tile in edge:
                     if self.stop_on_location(tile):
                         break
                     elif self.skip_location(tile):
-                        new_edge.extend(tile.neighbors(board, direction))
+                        new_edge.extend(tile.neighbors(game_state, direction))
                     else:
                         neighbors.append(tile)
-                        new_edge.extend(tile.neighbors(board, direction))
+                        new_edge.extend(tile.neighbors(game_state, direction))
                 edge = new_edge
         return neighbors
 
