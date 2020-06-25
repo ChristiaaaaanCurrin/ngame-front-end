@@ -49,5 +49,5 @@ class ChessPlayer(Player):
                 legal = [PlayerStatusChange(self, lose)]
             elif not legal:
                 legal = [PlayerStatusChange(self, self.stalemate_status)]
-        p
+
         return legal

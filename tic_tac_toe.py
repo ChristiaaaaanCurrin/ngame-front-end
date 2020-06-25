@@ -17,7 +17,7 @@ class TicTacToeMove(Move):
         else:
             self.player.occupied_coords.append(self.coords)
 
-    def anti_move(self):
+    def get_reverse_move(self):
         return self
 
 

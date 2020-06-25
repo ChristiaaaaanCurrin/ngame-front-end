@@ -10,9 +10,9 @@ class Move(ABC):
     """
 
     @abstractmethod
-    def anti_move(self):
+    def get_reverse_move(self):
         """
-        :return: a Move that carries instructions to undo self
+        :return: a Move carries instructions to undo self
         """
         pass
 
@@ -22,42 +22,43 @@ class Move(ABC):
 
 
 class CombinationMove(Move):
-    def __init__(self, *components):
-        self.components = components
+    def __init__(self, *component_moves):
+        self.component_moves = component_moves
 
     def __eq__(self, other):
-        return self.components == other.components
+        return self.component_moves == other.components
 
     def __repr__(self):
-        return 'CombinationMove' + str(self.components)
+        return 'CombinationMove' + str(self.component_moves)
 
-    def add_move(self, move):
-        self.components = self.components + tuple([move])
+    def add_move(self, *moves):
+        self.component_moves = self.component_moves + moves
 
     def remove_move(self, remove_component):
         new_components = []
-        for component in self.components:
+        for component in self.component_moves:
             if component != remove_component:
                 new_components.append(component)
-        self.components = new_components
+        self.component_moves = new_components
 
-    def anti_move(self):
+    def get_reverse_move(self):
         anti_components = []
-        for component in self.components:
-            anti_components.append(component.anti_move())
+        for component in self.component_moves:
+            anti_components.append(component.get_reverse_move())
         return CombinationMove(*anti_components)
 
     def execute_move(self, game_state):
-        for component in self.components:
+        for component in self.component_moves:
             component.execute_move(game_state)
 
-
+# TODO RecordMove as argument in execute_move for all moves.
 class RecordMove(CombinationMove):
     def __repr__(self):
-        return 'RecordMove' + str(self.components)
+        return 'RecordMove' + str(self.component_moves)
 
     def execute_move(self, game_state):
-        for component in self.components:
+        # TODO try super.execute_move() instead of for loop
+        for component in self.component_moves:
             component.execute_move(game_state)
         game_state.history.append(self)
 
@@ -69,7 +70,7 @@ class Pass(Move, EqualityByType):
     def __repr__(self):
         return 'Pass'
 
-    def anti_move(self):
+    def get_reverse_move(self):
         """
         To undo nothing, do nothing again
         """
@@ -81,7 +82,7 @@ class Pass(Move, EqualityByType):
 
 class PlayerStatusChange(Move):
     """
-    A players status changes the status of a player (does not need a gamestate to function)
+    A players status changes the status of a player
     """
     def __init__(self, player, new_status):
         """
@@ -95,7 +96,7 @@ class PlayerStatusChange(Move):
     def __repr__(self):
         return str(self.player) + ' -> ' + str(self.new_status)
 
-    def anti_move(self):
+    def get_reverse_move(self):
         return PlayerStatusChange(self.player, self.old_status)
 
     def execute_move(self, game_state):
@@ -115,15 +116,18 @@ class TokenOwnerChange(Move):
         self.token.owner = self.new_owner
         self.token.player = self.new_owner.player
 
-    def anti_move(self):
+    def get_reverse_move(self):
         return TokenOwnerChange(self.token, self.old_owner)
 
-
+# TODO split to avoid side effects.
 class PieceMoveAddRemove(Move):
     def __init__(self, piece, location=None):
         self.piece = piece
         self.new_location = location
         self.old_location = self.piece.location
+
+    def __repr__(self):
+        return str(self.piece) + ' -> ' + str(self.new_location)
 
     def execute_move(self, game_state):
         self.piece.location = self.new_location
@@ -135,5 +139,5 @@ class PieceMoveAddRemove(Move):
         elif self.new_location:
             game_state.add_pieces(self.piece)
 
-    def anti_move(self):
+    def get_reverse_move(self):
         return PieceMoveAddRemove(self.piece, self.old_location)

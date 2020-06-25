@@ -90,6 +90,7 @@ class SubordinatePiece(Piece, ABC):
     """
     Piece contains the minimum requirements for a piece: game_state, player, location, legal_moves().
     """
+
     def __init__(self, player=None, location=None, successor=None):
         """
         :param player: must be a Player in game_state.players
@@ -100,12 +101,12 @@ class SubordinatePiece(Piece, ABC):
         self.location = location
 
     @abstractmethod
-    def attackers_of_same_type(self, game_state, piece):
+    def attacks_piece(self, game_state, piece):
         """
         this method should be overridden if attacked is to be used
         :param game_state: game state of self
-        :param piece: the piece that is attacked by pieces
-        :return: list of pieces in game_state where type(piece) == type(self) and piece "attacks" self
+        :param piece: the piece that is attacked by self
+        :return: true if self attacks pieces, else false
         """
         pass
 
@@ -115,7 +116,7 @@ class SubordinatePiece(Piece, ABC):
         """
         attacked = False
         for piece_type in game_state.piece_types:
-            if piece_type.attackers_of_same_type(game_state, self):
+            if piece_type.attacks_piece(game_state, self):
                 attacked = True
                 break
         return attacked
@@ -127,6 +128,7 @@ class SimpleMovePiece(SubordinatePiece, ABC):
     (removing) other pieces. A SimpleMovePiece must have a method returning the locations accessible to self and
     a method returning a list of pieces that would be captured if self moved to a given location
     """
+
     @abstractmethod
     def accessible_locations(self, game_state):
         """
@@ -135,7 +137,7 @@ class SimpleMovePiece(SubordinatePiece, ABC):
         pass
 
     @abstractmethod
-    def captured_pieces(self, game_state, location):
+    def capturable_pieces(self, game_state, location):
         """
         :param game_state: the game_state of the piece
         :param location: potential location to which self might move
@@ -150,7 +152,7 @@ class SimpleMovePiece(SubordinatePiece, ABC):
         legal = []
         for location in self.accessible_locations(game_state):
             move = CombinationMove(PieceMoveAddRemove(self, location))  # A move will always change the pieces location
-            for captured_piece in self.captured_pieces(game_state, location):
+            for captured_piece in self.capturable_pieces(game_state, location):
                 move.add_move(PieceMoveAddRemove(captured_piece))  # captures pieces by moving them to location None
             legal.append(move)
         return legal
@@ -160,11 +162,12 @@ class SimpleCapturePiece(SimpleMovePiece, ABC):
     """
     A SimpleCapturePiece captures by moving to the same location as the target piece.
     """
-    def captured_pieces(self, game_state, location):
+
+    def capturable_pieces(self, game_state, location):
         return filter(lambda x: x.location == location, game_state.pieces())
 
 
-# INCOMPLETE
+# TODO Complete this class
 class PatternMovePiece(SimpleMovePiece, ABC):
     @abstractmethod
     def directions(self):

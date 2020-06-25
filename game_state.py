@@ -56,7 +56,7 @@ class GameState(ABC):
 
     def revert(self):
         if self.history:
-            revert_move = self.history.pop(-1).anti_move()
+            revert_move = self.history.pop(-1).get_reverse_move()
             revert_move.execute_move(self)
             return True
         else:
