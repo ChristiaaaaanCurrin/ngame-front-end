@@ -1,4 +1,4 @@
-from piece import instantiate_pieces_from_integer, TopTurnToken, Player, play_on, win, lose, draw
+from piece import instantiate_pieces_from_integer, TopTurnToken, Player, play_on, win, lose, draw, Piece
 from move import Move, PlayerStatusChange, CombinationMove
 from game_state import GameState, max_n
 
@@ -96,5 +96,5 @@ for m in range(2):
         test_game.legal_moves()[0].execute_move(test_game)
     print(test_game)
 """
-print(max_n(game_state=test_game, max_depth=10))
+print(max_n(game_state=test_game, max_depth=3))
 print(test_game)

@@ -167,7 +167,7 @@ class SimpleCapturePiece(SimpleMovePiece, ABC):
         return filter(lambda x: x.location == location, game_state.pieces())
 
 
-# TODO Complete this class
+# TODO Complete PatternMovePiece class
 class PatternMovePiece(SimpleMovePiece, ABC):
     @abstractmethod
     def directions(self):

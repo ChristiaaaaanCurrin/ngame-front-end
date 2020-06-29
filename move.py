@@ -57,9 +57,7 @@ class RecordMove(CombinationMove):
         return 'RecordMove' + str(self.component_moves)
 
     def execute_move(self, game_state):
-        # TODO try super.execute_move() instead of for loop
-        for component in self.component_moves:
-            component.execute_move(game_state)
+        super().execute_move(game_state)
         game_state.history.append(self)
 
 
