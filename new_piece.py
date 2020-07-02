@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from new_location import play_on
+from piece import play_on
 
 
 class Piece(ABC):
@@ -18,16 +18,17 @@ class Piece(ABC):
         """
         pass
 
-    def execute_move(self, new_location, old_location, sub_moves=None):
-        for piece, move in sub_moves:
-            piece.execute_move(move)
-        self.location = new_location
+    @abstractmethod
+    def execute_move(self, move, move_inverse, sub_moves=None):
+        for piece, sub_move in sub_moves:
+            piece.execute_move(sub_move)
+        self.location = move
 
-    def reverse_move(self, new_location, old_location, sub_moves=None):
-        self.location = old_location
-        if sub_moves:
-            for piece, move in sub_moves:
-                piece.execute_move(old_location)
+    @abstractmethod
+    def reverse_move(self, move, move_inverse, sub_moves=None):
+        self.location = move_inverse
+        for piece, sub_move in sub_moves:
+            piece.execute_move(sub_move)
 
 
 # -- Token ------------------------------------------
@@ -47,7 +48,7 @@ class Token(Piece, ABC):
     def legal_moves(self, game_state):
         legal = []
         for move in self.location.legal_moves(game_state):
-            legal.append((self.location.successor, self.location, [move]))
+            legal.append((self.location.successor, self.location, [(self.location, move)]))
         return legal
 
 

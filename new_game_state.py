@@ -10,7 +10,7 @@ class GameState(ABC):
         if tokens:
             self.all_tokens = tokens
         else:
-            self.tokens = [top_token]
+            self.all_tokens = [top_token]
 
         if pieces:
             self.all_sub_pieces = pieces
@@ -27,20 +27,18 @@ class GameState(ABC):
     def sub_pieces(self, *players):
         if players:
             pieces = []
+            for player in players:
+                for piece in self.all_pieces:
+                    if piece.player == player and piece.location is not None:
+                        pieces.append(piece)
         else:
             pieces = self.all_sub_pieces
-
-        for piece in self.all_pieces:
-            for player in players:
-                if piece.player == player and piece.location is not None:
-                    pieces.append(piece)
-
         return pieces
 
-    def tokens(self, *levels):
+    def tokens(self, *players):
         tokens = []
         for token in self.all_tokens:
-            if token.level in levels:
+            if token.player in players:
                 tokens.append(token)
         return tokens
 
