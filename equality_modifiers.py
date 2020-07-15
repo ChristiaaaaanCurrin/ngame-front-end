@@ -18,3 +18,17 @@ class Const(EqualityByArgs):
 
     def __call__(self, *args, **kwargs):
         return self.value
+
+
+def selective_inheritance(name, base_attributes):
+    bases = [object]
+    for base_object in base_attributes:
+        if type(base_object) not in bases:
+            bases.append(type(base_object))
+
+    attributes = {}
+    for base_object in base_attributes:
+        attributes[base_attributes[base_object]] = getattr(base_object, base_attributes[base_object])
+    x = type(name, (object,), attributes)
+    return x
+

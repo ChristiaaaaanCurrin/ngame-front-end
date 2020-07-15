@@ -96,5 +96,5 @@ for m in range(2):
         test_game.legal_moves()[0].execute_move(test_game)
     print(test_game)
 """
-print(max_n(game_state=test_game, max_depth=3))
+print(max_n(game_state=test_game, max_depth=9))
 print(test_game)
