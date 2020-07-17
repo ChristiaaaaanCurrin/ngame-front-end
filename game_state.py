@@ -1,105 +1,86 @@
 from abc import ABC, abstractmethod
-from equality_modifiers import EqualityByArgs
-from move import CombinationMove
 import numpy as np
 
 
-class GameState(ABC):
-    def __init__(self, top_token, players, tokens=None, pieces=None, history=None):
-        self.top_token = top_token
-        self.all_players = players
+class GameState:
+    def __init__(self):
+        self._top_rules = []
+        self._players = []
 
-        if tokens:
-            self.tokens = tokens
-        else:
-            self.tokens = [top_token]
-
-        if pieces:
-            self.all_pieces = pieces
-        else:
-            self.all_pieces = []
-
-        if history:
-            self.history = history
-        else:
-            self.history = []
-
-    def players(self, *player_statuses, not_player=None):
+    def get_players(self, *player_statuses, not_player=None):
         players = []
-        for player in self.all_players:
+        for player in self._players:
             if (player.status in player_statuses or not player_statuses) and player != not_player:
                 players.append(player)
         return players
 
-    def pieces(self, *players):
+    def get_top_rules(self, *players):
         if players:
-            pieces = []
+            return filter(lambda x: x.player in players, self._top_rules)
         else:
-            pieces = self.all_pieces
-        for piece in self.all_pieces:
-            for player in players:
-                if piece.player == player:
-                    pieces.append(piece)
-        return pieces
+            return self._top_rules
 
-    def tokens(self, player):
-        pass
+    def get_all_rules(self):
+        all_rules = []
+        for top_rule in self._top_rules:
+            all_rules.extend(top_rule.get_piece())
+        return all_rules
 
-    def legal_moves(self):
-        return self.top_token.legal_moves(self)
+    def add_piece(self, *top_rules):
+        for top_rule in top_rules:
+            if top_rule not in self._top_rules:
+                self._top_rules.append(top_rule)
 
-    def utility(self):
-        utility = {}
-        for player in self.players():
-            utility[player] = player.utility(self)
-        return utility
+                rule = top_rule.sub_rule
+                while rule:
+                    rule.game_state = self
+                    if rule.player and rule.player not in self._players:
+                        self._players.append(rule.player)
+                    rule = rule.sub_rule
 
-    def revert(self):
-        if self.history:
-            revert_move = self.history.pop(-1).get_reverse_move()
-            revert_move.execute_move(self)
-            return True
-        else:
-            return False
+    def remove_piece(self, *top_rules):
+        for rule in top_rules:
+            while rule in self._top_rules:
+                self._top_rules.remove(rule)
 
 
-def max_n(game_state, max_depth):
+def max_n(game, max_depth):
     """
     Similar to minimax, evaluates a game tree given best play (according to the utility method) by all players
     takes an integer depth and examines the tree of game states after all possible moves sequences up to 'max_depth'
     subsequent moves. End nodes (found by depth or by a lack of any legal moves after them) are evaluated by the
     'utility' method. Utilities are assigned to parent game states by which of the children is the best for the
     'player_to_move' of the parent. The resulting utility assigned to the original game state is returned
-    :param game_state: game state to be tested
+    :param game: game to be tested
     :param max_depth: integer, indicates how many moves to the bottom of the value search tree
     :return: dictionary of values keyed by payers
     """
-    move_tree = [game_state.legal_moves()]  # tracks unexplored moves of current game state and its parents
+    move_tree = [game.get_legal_moves()]  # tracks unexplored moves of current game state and its parents
     utility_tree = [[]]  # gets an empty list for every node in the current branch, to be populated later
     depth = 0  # start at depth 0
 
     while True:
         # Starting from a new position
-        player_to_maximize = game_state.top_token.player
+        player_to_maximize = game.get_bottom_rule().player
 
         # In the middle of the tree? Go down.
         if depth != max_depth and move_tree[-1]:  # if in the middle of an unexplored branch of the game state tree
             move = move_tree[-1].pop(0)  # grab the first unexplored move and remove it from the move tree
 
-            move.execute_move(game_state)  # make the move on the game_state
+            game.execute_move(move)  # make the move on the game_state
             utility_tree.append([])  # tack on an empty list for utilities
-            move_tree.append(game_state.legal_moves())  # every legal move from the new_game state is a new branch
+            move_tree.append(game.get_legal_moves())  # every legal move from the new_game state is a new branch
             depth = depth + 1  # record the change in depth
             continue  # rerun loop from new game state
 
         # Nowhere to go down? Go up.
         else:
-            if (not game_state.legal_moves()) or (depth == max_depth):  # only need utility from bottom of the tree
-                utility_tree[-1].append(game_state.utility())  # add utility to the list of the parent
+            if (not game.get_legal_moves()) or (depth == max_depth):  # only need utility from bottom of the tree
+                utility_tree[-1].append(game.get_utility())  # add utility to the list of the parent
 
             # If you're not at the top, you can go up
             if depth != 0:  # unless at the top...
-                game_state.revert()  # revert from current position to parent position
+                game.revert()  # revert from current position to parent position
                 # utility of the position is the best child utility for the player to move
                 # utility of the position is added to the utility list of the parent
                 utility_tree[-2].append(dictionary_max(player_to_maximize, utility_tree.pop(-1)))
@@ -129,7 +110,7 @@ def neural_net_training_data(game, game_state, n_max_depth, batch_size):
     for i in range(batch_size):
         game.randomize_position(game_state)  # create random position
         neural_net_output = []
-        for player in game_state.players:
+        for player in game_state.get_players:
             neural_net_output.append(max_n(game_state, n_max_depth)[player])  # generate output from n_max function
         training_data.append((np.asarray(game.neural_net_input(game_state)), np.asarray(neural_net_output)))
     return training_data  # don't forget to return
