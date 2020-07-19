@@ -1,6 +1,7 @@
-from rule import Player, SimpleTurn, instantiate_pieces_from_integer, play_on, win, lose, draw
+from rule import SimpleTurn, instantiate_rules_from_integer
+from player import Player, play_on, win, lose, draw
 from game_state import GameState, max_n
-from equality_modifiers import selective_inheritance
+from timeit import default_timer
 
 
 class TicTacToeGameState(GameState):
@@ -84,20 +85,14 @@ class TicTacToePlayer(Player):
                 player.status = old_status
 
 
-test_players = instantiate_pieces_from_integer(TicTacToePlayer, 2, game_state=TicTacToeGameState())
+test_players = instantiate_rules_from_integer(TicTacToePlayer, 2, game_state=TicTacToeGameState())
 test_game = SimpleTurn('ttc', sub_rule=test_players[0], game_state=test_players[0].game_state)
-[print(player.status) for player in test_players]
-[print(player.get_legal_moves()) for player in test_players]
-print(test_game.get_legal_moves())
 
-for m in range(0):
-    if test_game.get_legal_moves():
-        test_game.execute_move(test_game.get_legal_moves()[0])
-    print(test_game)
+print('Game to Evaluate: ', test_game, test_game.game_state, '\n\nBEGIN EVALUATION')
 
+start = default_timer()
+value = max_n(test_game, 9)
+stop = default_timer()
 
-print(test_game.get_utility())
-print(max_n(test_game, 9))
-
-print('--------------------\n--------------------')
+print('EVALUATION COMPLETE', '\n\nValue: ', value, '\nTime to Complete: ', stop - start)
 

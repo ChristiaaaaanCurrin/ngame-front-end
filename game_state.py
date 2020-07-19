@@ -26,17 +26,20 @@ class GameState:
             all_rules.extend(top_rule.get_piece())
         return all_rules
 
-    def add_piece(self, *top_rules):
+    def add_pieces(self, *top_rules):
         for top_rule in top_rules:
             if top_rule not in self._top_rules:
                 self._top_rules.append(top_rule)
 
-                rule = top_rule.sub_rule
-                while rule:
+                for rule in top_rule.get_piece():
                     rule.game_state = self
                     if rule.player and rule.player not in self._players:
                         self._players.append(rule.player)
-                    rule = rule.sub_rule
+
+    def add_players(self, *rules):
+        for rule in rules:
+            if rule.player not in self._players:
+                self._players.append(rule.player)
 
     def remove_piece(self, *top_rules):
         for rule in top_rules:
