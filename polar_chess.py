@@ -1,6 +1,6 @@
 from game_state import GameState
 from rule import piece
-from player import Player
+from player import Player, play_on
 from coordinate_rule import SimpleCapture, Tile, PatternRule
 
 
@@ -15,6 +15,39 @@ class PolarChessGameState(GameState):
 
     def __repr__(self):
         return str(self.rings)
+
+
+class ChessPlayer(Player):
+    def __init__(self, name, *kings, status=play_on, game_state=GameState(), successor=None):
+        super().__init__(name=name, status=status, game_state=game_state, successor=successor)
+        self.kings = kings
+
+    def get_legal_moves(self):  # TODO include status changes in legal moves
+        legal = []
+        for top_rule in self.game_state.get_top_rules(self.player):
+            for move in top_rule.get_legal_moves():
+                top_rule.execute_move(move)
+                if not self.is_in_check():
+                    legal.append((top_rule, move))
+                top_rule.undo_move(move)
+        return legal
+
+    def is_in_check(self):
+        for king in self.kings:
+            if king.is_attacked():
+                return True
+        return False
+
+    def execute_move(self, move):
+        sub_rule, sub_move = move
+        sub_rule.execute_move(sub_move)
+
+    def undo_move(self, move):
+        sub_rule, sub_move = move
+        sub_rule.undo_move(sub_move)
+
+    def get_utility(self):
+        return {self.player: self.status.utility_value(len(self.get_legal_moves()))}  #TODO include total legal in computation
 
 
 class RadialMove(PatternRule):
