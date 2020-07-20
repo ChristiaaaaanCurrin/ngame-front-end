@@ -153,7 +153,9 @@ def instantiate_rules_from_integer(rule_class, number_of_pieces, game_state=Game
 # -- Piece creator Method ---------------------------------
 
 def piece(*rules):
+    player = rules[0].player
     for i, rule in enumerate(rules[:-1]):
         rule.sub_rule = rules[i+1]
+        rule.player = player
     rules[0].game_state.add_pieces(rules[0])
     return rules[0]

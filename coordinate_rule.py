@@ -113,8 +113,8 @@ class CaptureRule(Rule, ABC):
 
 
 class SimpleCapture(CaptureRule):
-    def __init__(self, game_state=GameState(), player=None, sub_rule=None, successor=None):
-        super().__init__(name='Simple Capture', game_state=game_state, player=player,
+    def __init__(self, name='Simple Capture', game_state=GameState(), player=None, sub_rule=None, successor=None):
+        super().__init__(name=name, game_state=game_state, player=player,
                          sub_rule=sub_rule, successor=successor)
 
     def get_string_legal(self):
