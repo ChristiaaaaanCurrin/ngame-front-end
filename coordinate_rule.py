@@ -1,5 +1,5 @@
 from rule import Rule
-from abc import ABC
+from abc import ABC, abstractmethod
 from game_state import GameState
 
 
@@ -27,12 +27,15 @@ class Tile(Rule):
         return {self.player: 0}
 
 
-class MovementRule(Rule, ABC):
+class CoordinateRule(Rule, ABC):
     def __init__(self, name=None, game_state=GameState(), player=None, sub_rule=None):
         super().__init__(name=name, game_state=game_state, player=player, sub_rule=sub_rule, successor=None)
 
-    def __repr__(self):
-        return str(self.name) + str(self.sub_rule)
+    def string_legal(self):
+        string_legal = []
+        for new_coords, old_coords in self.get_legal_moves():
+            string_legal.append(new_coords)
+        return string_legal
 
     def execute_move(self, move):
         self.get_bottom_rule().execute_move(move)
@@ -44,13 +47,42 @@ class MovementRule(Rule, ABC):
         return {self.player: 0}
 
 
+# -- Pattern Rule -----------------------------------------
+
+class PatternRule(CoordinateRule, ABC):
+    @abstractmethod
+    def get_step(self, coords):
+        pass
+
+    @abstractmethod
+    def does_stop_on(self, coords):
+        pass
+
+    @abstractmethod
+    def does_skip(self, coords):
+        pass
+
+    def get_legal_moves(self):
+        edge = self.get_step(self.get_bottom_rule().coords)
+        legal = self.sub_rule.get_legal_moves()
+        while edge:
+            new_edge = []
+            for coords in edge:
+                if not self.does_skip(coords):
+                    legal.append((coords, self.get_bottom_rule().coords))
+                if not self.does_stop_on(coords):
+                    new_edge.extend(self.get_step(coords))
+            edge = new_edge
+        return legal
+
+
 # -- Capture Rule -----------------------------------------
 
 class CaptureRule(Rule, ABC):
     def __eq__(self, other):
         return other.get_bottom_rule() == self.get_bottom_rule()
 
-    def attacks_piece(self, piece):
+    def does_attack_piece(self, piece):
         """
         :param piece: piece that self might be 'attacking'
         :return: true if self 'attacks' piece
@@ -64,7 +96,7 @@ class CaptureRule(Rule, ABC):
     def is_attacked(self):
         attacked = False
         for piece in self.game_state.get_top_rules():
-            if piece.attacks_piece(self):
+            if piece.does_attack_piece(self):
                 attacked = True
                 break
         return attacked
@@ -81,11 +113,18 @@ class CaptureRule(Rule, ABC):
 
 
 class SimpleCapture(CaptureRule):
-    def __init__(self, name, game_state=GameState(), player=None, sub_rule=None, successor=None):
-        super().__init__(name=name, game_state=game_state, player=player, sub_rule=sub_rule, successor=successor)
+    def __init__(self, game_state=GameState(), player=None, sub_rule=None, successor=None):
+        super().__init__(name='Simple Capture', game_state=game_state, player=player,
+                         sub_rule=sub_rule, successor=successor)
 
-    def __repr__(self):
-        return "Simple Capture " + str(self.sub_rule)
+    def get_string_legal(self):
+        string_legal = ''
+        for sub_rule, (new_coords, old_coords), *to_capture in self.get_legal_moves():
+            string_legal = string_legal + str(new_coords)
+            if to_capture:
+                string_legal = string_legal + 'X' + str(to_capture)
+            string_legal = string_legal + ', '
+        return string_legal
 
     def get_legal_moves(self):
         legal = []

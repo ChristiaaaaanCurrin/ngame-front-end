@@ -10,6 +10,9 @@ class Rule(ABC):
         self.sub_rule = sub_rule
         self.successor = successor
 
+    def __repr__(self):
+        return str(self.name)
+
     @abstractmethod
     def get_legal_moves(self):
         """
@@ -150,7 +153,7 @@ def instantiate_rules_from_integer(rule_class, number_of_pieces, game_state=Game
 # -- Piece creator Method ---------------------------------
 
 def piece(*rules):
-    for i, rule in enumerate(rules[:-2]):
+    for i, rule in enumerate(rules[:-1]):
         rule.sub_rule = rules[i+1]
     rules[0].game_state.add_pieces(rules[0])
     return rules[0]
