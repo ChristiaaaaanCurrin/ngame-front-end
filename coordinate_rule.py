@@ -3,13 +3,19 @@ from abc import ABC
 from game_state import GameState
 
 
-class CoordinateRule(Rule, ABC):
-    def __init__(self, name, coords, game_state=GameState(), player=None):
-        super().__init__(name=name, game_state=game_state, player=player, successor=None)
+class Tile(Rule):
+    def __init__(self, *coords):
+        super().__init__(name=None)
         self.coords = coords
 
+    def __eq__(self, other):
+        return self.coords == other.coords
+
     def __repr__(self):
-        return str(self.name) + str(self.coords)
+        return str(self.coords)
+
+    def get_legal_moves(self):
+        return []
 
     def execute_move(self, move):
         self.coords = move[0]
@@ -18,7 +24,24 @@ class CoordinateRule(Rule, ABC):
         self.coords = move[1]
 
     def get_utility(self):
-        return {self.player: 1}
+        return {self.player: 0}
+
+
+class MovementRule(Rule, ABC):
+    def __init__(self, name=None, game_state=GameState(), player=None, sub_rule=None):
+        super().__init__(name=name, game_state=game_state, player=player, sub_rule=sub_rule, successor=None)
+
+    def __repr__(self):
+        return str(self.name) + str(self.sub_rule)
+
+    def execute_move(self, move):
+        self.get_bottom_rule().execute_move(move)
+
+    def undo_move(self, move):
+        self.get_bottom_rule().undo_move(move)
+
+    def get_utility(self):
+        return {self.player: 0}
 
 
 # -- Capture Rule -----------------------------------------
@@ -48,7 +71,7 @@ class CaptureRule(Rule, ABC):
 
     def execute_move(self, move):
         sub_rule, sub_move, *pieces_to_capture = move
-        self.game_state.remove_piece(*pieces_to_capture)
+        self.game_state.remove_pieces(*pieces_to_capture)
         sub_rule.execute_move(sub_move)
 
     def undo_move(self, move):

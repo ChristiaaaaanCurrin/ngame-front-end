@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 import numpy as np
 
 
@@ -41,7 +40,7 @@ class GameState:
             if rule.player not in self._players:
                 self._players.append(rule.player)
 
-    def remove_piece(self, *top_rules):
+    def remove_pieces(self, *top_rules):
         for rule in top_rules:
             while rule in self._top_rules:
                 self._top_rules.remove(rule)

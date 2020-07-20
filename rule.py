@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from game_state import GameState, dictionary_max
-from equality_modifiers import EqualityByArgs
 
 
 class Rule(ABC):
@@ -95,7 +94,7 @@ class SimpleTurn(Game):
         return utility
 
 
-# -- Combining Rule ---------------------------------------
+# -- Combining Rule --------------------------------------- TODO This may be a little janky and unnecessary...
 
 class RuleSum(Rule):
     def __init__(self, name=None, game_state=GameState(), player=None, successor=None, *sub_rules):
@@ -139,11 +138,19 @@ class RuleSum(Rule):
 
 # -- Rule Factory Method ----------------------------------
 
-def instantiate_rules_from_integer(piece_class, number_of_pieces, game_state=GameState()):
-    pieces = [piece_class(name=number_of_pieces, game_state=game_state)]
+def instantiate_rules_from_integer(rule_class, number_of_pieces, game_state=GameState()):
+    rules = [rule_class(name=number_of_pieces, game_state=game_state)]
     for n in range(number_of_pieces - 1):
-        pieces.append(piece_class(successor=pieces[n], name=number_of_pieces - 1 - n, game_state=game_state))
-    pieces[0].successor = pieces[-1]
-    pieces.reverse()
-    return pieces
+        rules.append(rule_class(successor=rules[n], name=number_of_pieces - 1 - n, game_state=game_state))
+    rules[0].successor = rules[-1]
+    rules.reverse()
+    return rules
 
+
+# -- Piece creator Method ---------------------------------
+
+def piece(*rules):
+    for i, rule in enumerate(rules[:-2]):
+        rule.sub_rule = rules[i+1]
+    rules[0].game_state.add_pieces(rules[0])
+    return rules[0]
