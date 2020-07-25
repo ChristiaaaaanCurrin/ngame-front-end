@@ -3,15 +3,10 @@ from game_state import GameState, dictionary_max
 
 
 class Rule(ABC):
-    def __init__(self, name, game_state=None, player=None, sub_rule=None, successor=None):
-        self.name = name
+    def __init__(self, game_state=None, player=None, sub_rule=None):
         self.game_state = game_state
         self.player = player
         self.sub_rule = sub_rule
-        self.successor = successor
-
-    def __repr__(self):
-        return str(self.name)
 
     @abstractmethod
     def get_legal_moves(self):
@@ -53,17 +48,28 @@ class Rule(ABC):
         else:
             return [self]
 
+    def max_n(self, n):
+        legal = self.get_legal_moves()
+        if n == 0 or not legal:
+            return self.get_utility()
+        else:
+            utilities = []
+            for move in legal:
+                self.execute_move(move)
+                utilities.append(self.max_n(n-1))
+                self.undo_move(move)
+            if self.player:
+                return dictionary_max(self.player, utilities)
+            elif self.sub_rule:
+                return dictionary_max(self.get_bottom_rule().player, utilities)
+
 
 # -- Game -------------------------------------------------
 
 class Game(Rule, ABC):
-    def __init__(self, name, game_state=GameState(), sub_rule=None, history=None):
-        super().__init__(name=name, game_state=game_state, player=None, sub_rule=sub_rule, successor=self)
+    def __init__(self, game_state=GameState(), sub_rule=None):
+        super().__init__(game_state=game_state, player=None, sub_rule=sub_rule)
         self.game_state.add_pieces(self)
-        if history:
-            self.history = history
-        else:
-            self.history = []
 
     def __repr__(self):
         return 'turn: ' + str(self.sub_rule)
@@ -72,39 +78,52 @@ class Game(Rule, ABC):
         self.sub_rule = move[0]
         for rule, sub_move in move[2]:
             rule.execute_move(sub_move)
-        self.history.append(move)
 
     def undo_move(self, move):
         for rule, sub_move in move[2]:
             rule.undo_move(sub_move)
         self.sub_rule = move[1]
 
-    def revert(self):
-        self.undo_move(self.history.pop(-1))
-
 
 class SimpleTurn(Game):
+    def __init__(self, game_state, *sub_rules, turn=0):
+        self.sequence = sub_rules
+        self.turn = turn % len(self.sequence)
+        super().__init__(game_state=game_state, sub_rule=self.sequence[0])
+
     def get_legal_moves(self):
         legal = []
         for move in self.sub_rule.get_legal_moves():
-            legal.append((self.sub_rule.successor, self.sub_rule, [(self.sub_rule, move)]))
+            legal.append((self.sub_rule, move))
         return legal
+
+    def execute_move(self, move):
+        sub_rule, sub_move = move
+        self.turn = (self.turn + 1) % len(self.sequence)
+        self.sub_rule = self.sequence[self.turn]
+        sub_rule.execute_move(sub_move)
+
+    def undo_move(self, move):
+        sub_rule, sub_move = move
+        sub_rule.undo_move(sub_move)
+        self.turn = (self.turn - 1) % len(self.sequence)
+        self.sub_rule = self.sequence[self.turn]
 
     def get_utility(self):
         utility = {}
-        for player in self.game_state.get_players():
-            utility.update(player.get_utility())
+        for sub_rule in self.sequence:
+            utility.update(sub_rule.get_utility())
         return utility
 
 
-# -- Combining Rule --------------------------------------- TODO This may be a little janky and unnecessary...
+# -- Combining Rule ---------------------------------------
 
-class RuleSum(Rule):
-    def __init__(self, name=None, game_state=GameState(), player=None, successor=None, *sub_rules):
+class RuleSum(Rule):  # TODO This may be a little janky and unnecessary...
+    def __init__(self, game_state=GameState(), player=None, *sub_rules):
         self.all_subs = []
         for rule in sub_rules:
             self.all_subs.append(rule)
-        super().__init__(name=name, game_state=game_state, player=player, successor=successor, sub_rule=sub_rules)
+        super().__init__(game_state=game_state, player=player, sub_rule=sub_rules)
 
     def __repr__(self):
         return 'Sum' + str([str(rule) for rule in self.sub_rule])
@@ -131,23 +150,12 @@ class RuleSum(Rule):
             return self
 
     def get_piece(self):
-        piece = [self]
-        [piece.extend(rule.get_piece()) for rule in self.sub_rule]
-        return piece
+        this_piece = [self]
+        [this_piece.extend(rule.get_piece()) for rule in self.sub_rule]
+        return this_piece
 
     def get_utility(self):
         return dictionary_max(self.player, [rule.get_utility() for rule in self.sub_rule])
-
-
-# -- Rule Factory Method ----------------------------------
-
-def instantiate_rules_from_integer(rule_class, number_of_pieces, game_state=GameState()):
-    rules = [rule_class(name=number_of_pieces, game_state=game_state)]
-    for n in range(number_of_pieces - 1):
-        rules.append(rule_class(successor=rules[n], name=number_of_pieces - 1 - n, game_state=game_state))
-    rules[0].successor = rules[-1]
-    rules.reverse()
-    return rules
 
 
 # -- Piece creator Method ---------------------------------

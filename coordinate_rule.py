@@ -5,11 +5,11 @@ from game_state import GameState
 
 class Tile(Rule):
     def __init__(self, *coords):
-        super().__init__(name=None)
+        super().__init__()
         self.coords = coords
 
     def __eq__(self, other):
-        return self.coords == other.coords
+        return hasattr(other, 'coords') and self.coords == other.coords
 
     def __repr__(self):
         return str(self.coords)
@@ -28,8 +28,8 @@ class Tile(Rule):
 
 
 class CoordinateRule(Rule, ABC):
-    def __init__(self, name=None, game_state=GameState(), player=None, sub_rule=None):
-        super().__init__(name=name, game_state=game_state, player=player, sub_rule=sub_rule, successor=None)
+    def __init__(self, game_state=GameState(), player=None, sub_rule=None):
+        super().__init__(game_state=game_state, player=player, sub_rule=sub_rule)
 
     def string_legal(self):
         string_legal = []
@@ -96,7 +96,7 @@ class CaptureRule(Rule, ABC):
     def is_attacked(self):
         attacked = False
         for piece in self.game_state.get_top_rules():
-            if piece.does_attack_piece(self):
+            if hasattr(piece, 'does_attack_piece') and piece.does_attack_piece(self):
                 attacked = True
                 break
         return attacked
@@ -113,9 +113,8 @@ class CaptureRule(Rule, ABC):
 
 
 class SimpleCapture(CaptureRule):
-    def __init__(self, name='Simple Capture', game_state=GameState(), player=None, sub_rule=None, successor=None):
-        super().__init__(name=name, game_state=game_state, player=player,
-                         sub_rule=sub_rule, successor=successor)
+    def __init__(self, game_state=GameState(), player=None, sub_rule=None):
+        super().__init__(game_state=game_state, player=player, sub_rule=sub_rule)
 
     def get_string_legal(self):
         string_legal = ''

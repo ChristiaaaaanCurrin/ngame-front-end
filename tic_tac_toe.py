@@ -1,5 +1,5 @@
-from rule import SimpleTurn, instantiate_rules_from_integer
-from player import Player, play_on, win, lose, draw
+from rule import SimpleTurn
+from player import Player, play_on, win, lose, draw, player_factory
 from game_state import GameState, max_n
 from timeit import default_timer
 
@@ -12,13 +12,10 @@ class TicTacToeGameState(GameState):
         self.win_condition = win_condition
         super().__init__()
 
-    def __repr__(self):
-        return str([(player, player.occupied_coords) for player in self.get_players()])
-
 
 class TicTacToePlayer(Player):
-    def __init__(self, name='X', game_state=TicTacToeGameState(), successor=None, status=play_on, *occupied_coords):
-        super().__init__(name=name, game_state=game_state, successor=successor, status=status)
+    def __init__(self, name='X', game_state=TicTacToeGameState(), status=play_on, *occupied_coords):
+        super().__init__(name=name, game_state=game_state, status=status)
         self.occupied_coords = []
         for coord in occupied_coords:
             self.occupied_coords.append(coord)
@@ -41,7 +38,7 @@ class TicTacToePlayer(Player):
         return test_win
 
     def get_utility(self):
-        return {self: self.status.utility_value(total_utility=len(self.game_state.get_players()))}
+        return {self: self.status.utility_value()}
 
     def get_legal_moves(self):
         legal = []
@@ -85,8 +82,8 @@ class TicTacToePlayer(Player):
                 player.status = old_status
 
 
-test_players = instantiate_rules_from_integer(TicTacToePlayer, 2, game_state=TicTacToeGameState())
-test_game = SimpleTurn('ttc', sub_rule=test_players[0], game_state=test_players[0].game_state)
+test_players = player_factory(TicTacToePlayer, 2, game_state=TicTacToeGameState())
+test_game = SimpleTurn(test_players[0].game_state, *test_players)
 
 print('Game to Evaluate: ', test_game, test_game.game_state, '\n\nBEGIN EVALUATION')
 
@@ -96,3 +93,18 @@ stop = default_timer()
 
 print('EVALUATION COMPLETE', '\n\nValue: ', value, '\nTime to Complete: ', stop - start)
 
+'''
+print('\nMake a bunch of things and evaluate them')
+export = []
+start = default_timer()
+test_players = instantiate_rules_from_integer(TicTacToePlayer, 2, game_state=TicTacToeGameState())
+test_game = SimpleTurn('ttc', sub_rule=test_players[0], game_state=test_players[0].game_state)
+for n in range(362880):
+    export.append(test_game.get_legal_moves())
+    if test_game.get_legal_moves():
+        test_game.execute_move(test_game.get_legal_moves()[0])
+    else:
+        test_game.revert(4)
+stop = default_timer()
+print('EVALUATION COMPLETE', '\nTime to Complete: ', stop - start)
+'''

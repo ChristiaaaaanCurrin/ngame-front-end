@@ -32,10 +32,16 @@ play_on = PlayerStatus('a', None, True)
 # Player
 
 class Player(Rule, ABC):
-    def __init__(self, name, status, game_state=GameState(), successor=None):
+    def __init__(self, name, status, game_state=GameState()):
         self.status = status
-        super().__init__(name=name, player=self, successor=successor, game_state=game_state)
-        self.game_state.add_players(self)
+        super().__init__(player=name, game_state=game_state)
 
     def __repr__(self):
-        return 'p' + str(self.name)
+        return 'p' + str(self.player)
+
+
+def player_factory(player_class, number_of_pieces, game_state=GameState()):
+    rules = [player_class(name=number_of_pieces, game_state=game_state)]
+    for n in range(number_of_pieces - 1):
+        rules.append(player_class(name=n-1, game_state=game_state))
+    return rules

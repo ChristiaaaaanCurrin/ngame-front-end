@@ -4,14 +4,6 @@ import numpy as np
 class GameState:
     def __init__(self):
         self._top_rules = []
-        self._players = []
-
-    def get_players(self, *player_statuses, not_player=None):
-        players = []
-        for player in self._players:
-            if (player.status in player_statuses or not player_statuses) and player != not_player:
-                players.append(player)
-        return players
 
     def get_top_rules(self, *players):
         if players:
@@ -32,13 +24,6 @@ class GameState:
 
                 for rule in top_rule.get_piece():
                     rule.game_state = self
-                    if rule.player and rule.player not in self._players:
-                        self._players.append(rule.player)
-
-    def add_players(self, *rules):
-        for rule in rules:
-            if rule.player not in self._players:
-                self._players.append(rule.player)
 
     def remove_pieces(self, *top_rules):
         for rule in top_rules:
