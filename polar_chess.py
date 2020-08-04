@@ -2,7 +2,7 @@ from game_state import GameState
 from rule import piece, SimpleTurn
 from player import Player, play_on
 from coordinate_rule import SimpleCapture, Tile, PatternRule
-from timeit import default_timer
+from gui import GameGUI
 
 
 class PolarChessGameState(GameState):
@@ -34,6 +34,11 @@ class ChessPlayer(Player):
                     legal.append((top_rule, move))
                 top_rule.undo_move(move)
         return legal
+
+    @staticmethod
+    def move_to_string(move):
+        top_rule, sub_move = move
+        return str(top_rule) + top_rule.move_to_string(sub_move)
 
     def is_in_check(self):
         for king in self.kings:
@@ -180,7 +185,7 @@ class DiagonalMove(PatternRule):
 
 
 def lion(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player),
+    return piece(SimpleCapture(game_state, player).named('L'),
                  RadialMove(1, False),
                  RadialMove(-1, False),
                  AngularMove(1, False),
@@ -189,21 +194,21 @@ def lion(game_state, player, *coords):
 
 
 def leopard(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player),
+    return piece(SimpleCapture(game_state, player).named('P'),
                  RadialMove(),
                  RadialMove(-1),
                  Tile(*coords))
 
 
 def bear(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player),
+    return piece(SimpleCapture(game_state, player).named('B'),
                  AngularMove(),
                  AngularMove(-1),
                  Tile(*coords))
 
 
 def tiger(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player),
+    return piece(SimpleCapture(game_state, player).named('T'),
                  AngularMove(),
                  AngularMove(-1),
                  RadialMove(),
@@ -212,7 +217,7 @@ def tiger(game_state, player, *coords):
 
 
 def eagle(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player),
+    return piece(SimpleCapture(game_state, player).named('E'),
                  DiagonalMove(1, True, True, True),
                  DiagonalMove(-1, True, True, True),
                  DiagonalMove(1, False, True, True),
@@ -220,19 +225,18 @@ def eagle(game_state, player, *coords):
                  Tile(*coords))
 
 
-x = PolarChessGameState()
-Ly = lion(x, 'y', 4, 12)
-Lb = lion(x, 'b', 0, 0)
-y = ChessPlayer('y', x)
-b = ChessPlayer('b', x)
-g = SimpleTurn(x, y, b)
+if __name__ == "__main__":
+    s = PolarChessGameState()
+    Ly = lion(s, 'y', 4, 23)
+    Lb = lion(s, 'b', 0, 0)
+    y = ChessPlayer('y', s, Ly)
+    b = ChessPlayer('b', s, Lb)
+    g = SimpleTurn(s, y, b)
 
-x.add_pieces(bear(x, 'b', 1, 0))
-
-start = default_timer()
-print(g.max_n(6))
-stop = default_timer()
-print(stop-start)
+    s.add_pieces(bear(s, 'b', 1, 0))
+    print(g.get_bottom_rule().player)
+    for move in g.get_legal_moves():
+        print(g.move_to_string(move))
 
 
 '''

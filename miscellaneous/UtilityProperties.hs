@@ -59,7 +59,7 @@ worstLine  :: (Ord v, GameState s p, Move m s) => Utility s p v -> Game s m -> p
 worstLine  u g p s = minElem (flip u p) [execute m s | m <- g s]
 
 
---Scores the degeee to which a UTILITY function is NEAR PREFERENTIAL according to a gold standard VALUE function (0 is perfect score)
+--Scores the degree to which a UTILITY function is NEAR PREFERENTIAL according to a gold standard VALUE function (0 is perfect score)
 nearPref :: (Num v, Ord v, Move m s, GameState s p) => Utility s p v -> Utility s p v -> Game s m -> s -> v
 nearPref v u g s = square $ (1 + d) * (u s p) - 1
   where p = maxElem (v s) $ players s

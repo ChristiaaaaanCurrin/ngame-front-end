@@ -116,14 +116,13 @@ class SimpleCapture(CaptureRule):
     def __init__(self, game_state=GameState(), player=None, sub_rule=None):
         super().__init__(game_state=game_state, player=player, sub_rule=sub_rule)
 
-    def get_string_legal(self):
-        string_legal = ''
-        for sub_rule, (new_coords, old_coords), *to_capture in self.get_legal_moves():
-            string_legal = string_legal + str(new_coords)
-            if to_capture:
-                string_legal = string_legal + 'X' + str(to_capture)
-            string_legal = string_legal + ', '
-        return string_legal
+    @staticmethod
+    def move_to_string(move):
+        sub_rule, (new_coords, old_coords), *to_capture = move
+        string = str(new_coords)
+        if to_capture:
+            string = string + 'X' + str(to_capture).replace('[', '').replace(']', '')
+        return string
 
     def get_legal_moves(self):
         legal = []

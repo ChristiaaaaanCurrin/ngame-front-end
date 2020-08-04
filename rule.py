@@ -7,6 +7,14 @@ class Rule(ABC):
         self.game_state = game_state
         self.player = player
         self.sub_rule = sub_rule
+        self.name = '*'
+
+    def __repr__(self):
+        return self.name
+
+    def named(self, name):
+        self.name = name
+        return self
 
     @abstractmethod
     def get_legal_moves(self):
@@ -35,6 +43,10 @@ class Rule(ABC):
     @abstractmethod
     def get_utility(self):
         pass
+
+    @staticmethod
+    def move_to_string(move):
+        return str(move)
 
     def get_bottom_rule(self):
         if self.sub_rule:
@@ -93,19 +105,26 @@ class SimpleTurn(Game):
 
     def get_legal_moves(self):
         legal = []
-        for move in self.sub_rule.get_legal_moves():
-            legal.append((self.sub_rule, move))
+        for sub_move in self.sub_rule.get_legal_moves():
+            legal.append((self.sub_rule, sub_move))
         return legal
 
-    def execute_move(self, move):
+    @staticmethod
+    def move_to_string(move):
         sub_rule, sub_move = move
+        return sub_rule.move_to_string(sub_move)
+
+    def execute_move(self, move=None):
         self.turn = (self.turn + 1) % len(self.sequence)
         self.sub_rule = self.sequence[self.turn]
-        sub_rule.execute_move(sub_move)
+        if move:
+            sub_rule, sub_move = move
+            sub_rule.execute_move(sub_move)
 
-    def undo_move(self, move):
-        sub_rule, sub_move = move
-        sub_rule.undo_move(sub_move)
+    def undo_move(self, move=None):
+        if move:
+            sub_rule, sub_move = move
+            sub_rule.undo_move(sub_move)
         self.turn = (self.turn - 1) % len(self.sequence)
         self.sub_rule = self.sequence[self.turn]
 
