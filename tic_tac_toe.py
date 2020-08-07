@@ -1,15 +1,19 @@
 from rule import Rule
+from gui import GameGUI
+from tkinter import *
 from timeit import default_timer
 
 
 class TicTacToe(Rule):
-    def __init__(self, players=('X', 'O'), turn=0, rows=3, columns=3, to_win=3):
+    def __init__(self, players=('X', 'O'), turn=0, rows=3, columns=3, to_win=3, explore=False):
         super().__init__(player=players[turn])
         self.players = players
         self.turn = turn
         self.rows = rows
         self.columns = columns
         self.to_win = to_win
+        self.explore = explore
+        self.history = []
         self.occupancy = {}
         for player in self.players:
             self.occupancy[player] = 0
@@ -54,11 +58,24 @@ class TicTacToe(Rule):
             diagonal_mask = diagonal_mask << self.to_win
 
     def __str__(self):
-        return str(self.board)\
-             + str([(player, bin(self.occupancy[player])) for player in self.players])\
-             + str(self.winners())
+        return '~Tic Tac Toe~'
+
+    def clear_board(self):
+        for row in self.board:
+            for n in range(len(row)):
+                row[n] = None
+        for player in self.players:
+            self.occupancy[player] = 0
 
     def execute_move(self, move):
+        if move == "restart":
+            self.clear_board()
+            return
+        elif move == "undo":
+            self.undo_move(self.history.pop(-1))
+            return
+        elif self.explore:
+            self.history.append(move)
         r, c = move
         self.board[r][c] = self.player
         self.occupancy[self.player] = self.occupancy[self.player] | (1 << (r*self.columns + c))
@@ -88,6 +105,9 @@ class TicTacToe(Rule):
                 for c in range(self.columns):
                     if not self.board[r][c]:
                         legal.append((r, c))
+        if self.explore:
+            legal.append("undo")
+            legal.append("restart")
         return legal
 
     def get_utility(self):
@@ -105,12 +125,31 @@ class TicTacToe(Rule):
         return utility
 
 
-if __name__ == "__main__":
-    g = TicTacToe(rows=3, columns=3, to_win=3)
-    for m in g.win_masks:
-        print(bin(m))
+class TicTacToeGUI(GameGUI):
+    def create_board(self, *args):
+        lbl_board = Label(self.frm_out, text="")
+        lbl_board.config(font=("Courier", 60))
+        lbl_board.pack(fill=BOTH, expand=True)
+        return lbl_board
 
-    start = default_timer()
-    print(g.max_n(16))
-    stop = default_timer()
-    print(stop - start)
+    def update_board(self, *args):
+        board = ""
+        for row in self.game.board:
+            for tile in row:
+                if tile:
+                    board = board + str(tile)
+                else:
+                    board = board + "-"
+                board = board + "|"
+            board = board + "\n"
+        self.board["text"] = board
+        if self.game.winners():
+            Label(self.frm_out, text="Winner: " + str(self.game.winners())).pack()
+        elif not self.game.get_legal_moves():
+            Label(self.frm_out, text="Draw").pack()
+
+
+if __name__ == "__main__":
+    g = TicTacToe(explore=True)
+    gui = TicTacToeGUI(g)
+    gui.window.mainloop()

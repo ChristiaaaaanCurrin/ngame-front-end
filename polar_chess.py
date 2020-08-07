@@ -2,7 +2,7 @@ from game_state import GameState
 from rule import piece, SimpleTurn
 from player import Player, play_on
 from coordinate_rule import SimpleCapture, Tile, PatternRule
-from gui import GameGUI
+from timeit import default_timer
 
 
 class PolarChessGameState(GameState):
@@ -235,8 +235,14 @@ if __name__ == "__main__":
 
     s.add_pieces(bear(s, 'b', 1, 0))
     print(g.get_bottom_rule().player)
-    for move in g.get_legal_moves():
-        print(g.move_to_string(move))
+    for m in g.get_legal_moves():
+        print(g.move_to_string(m))
+    print("BEGIN EVALUATION")
+    start = default_timer()
+    print(g.max_n(4))
+    stop = default_timer()
+    print("END EVALUATION")
+    print("time to complete:", stop - start)
 
 
 '''
