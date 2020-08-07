@@ -1,7 +1,5 @@
-from equality_modifiers import EqualityByArgs
-from rule import Rule
+from miscellaneous.equality_modifiers import EqualityByArgs
 from game_state import GameState
-from abc import ABC
 
 
 # Player Status
@@ -27,17 +25,6 @@ win = PlayerStatus('w', 1, False)
 lose = PlayerStatus('l', 0, False)
 draw = PlayerStatus('d', None, False)
 play_on = PlayerStatus('a', None, True)
-
-
-# Player
-
-class Player(Rule, ABC):
-    def __init__(self, name, status, game_state=GameState()):
-        self.status = status
-        super().__init__(player=name, game_state=game_state)
-
-    def __repr__(self):
-        return 'p' + str(self.player)
 
 
 def player_factory(player_class, number_of_pieces, game_state=GameState()):

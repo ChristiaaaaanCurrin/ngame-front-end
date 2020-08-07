@@ -1,5 +1,5 @@
 from game_state import GameState
-from rule import piece, SimpleTurn
+from rule import piece, SimpleTurn, Rule
 from player import Player, play_on
 from coordinate_rule import SimpleCapture, Tile, PatternRule
 from timeit import default_timer
@@ -18,14 +18,15 @@ class PolarChessGameState(GameState):
         return str(self.rings)
 
 
-class ChessPlayer(Player):
+class ChessPlayer(Rule):
     def __init__(self, name, game_state=GameState(), *kings, status=play_on):
-        super().__init__(name=name, status=status, game_state=game_state)
+        super().__init__(name=name, player=name, game_state=game_state)
+        self.status = status
         self.kings = kings
         for king in self.kings:
             king.player = self.player
 
-    def get_legal_moves(self):  # TODO include status changes in legal moves
+    def get_legal_moves(self):  # TODO include status changes in legal moves? Win(ABC)? ZeroSum(Win)?
         legal = []
         for top_rule in self.game_state.get_top_rules(self.player):
             for move in top_rule.get_legal_moves():
@@ -59,8 +60,8 @@ class ChessPlayer(Player):
 
 
 class RadialMove(PatternRule):
-    def __init__(self, step_size=1, patterns=True, jumps=False, sub_rule=Tile(0, 0), player=None):
-        super().__init__(sub_rule=sub_rule, game_state=PolarChessGameState(), player=player)
+    def __init__(self, step_size=1, patterns=True, jumps=False, sub_rule=Tile(0, 0), player=None, name="*"):
+        super().__init__(sub_rule=sub_rule, game_state=PolarChessGameState(), player=player, name=name)
         self.step_size = step_size
         self.patterns = patterns
         self.jumps = jumps
@@ -102,8 +103,8 @@ class RadialMove(PatternRule):
 
 
 class AngularMove(PatternRule):
-    def __init__(self, step_size=1, patterns=True, jumps=False, sub_rule=Tile(0, 0), player=None):
-        super().__init__(sub_rule=sub_rule, game_state=PolarChessGameState(), player=player)
+    def __init__(self, step_size=1, patterns=True, jumps=False, sub_rule=Tile(0, 0), player=None, name="*"):
+        super().__init__(sub_rule=sub_rule, game_state=PolarChessGameState(), player=player, name=name)
         self.step_size = step_size
         self.patterns = patterns
         self.jumps = jumps
@@ -135,8 +136,9 @@ class AngularMove(PatternRule):
 
 
 class DiagonalMove(PatternRule):
-    def __init__(self, step_size=1, clockwise=True, patterns=True, jumps=False, sub_rule=Tile(0, 0), player=None):
-        super().__init__(sub_rule=sub_rule, game_state=PolarChessGameState(), player=player)
+    def __init__(self, step_size=1, clockwise=True, patterns=True, jumps=False,
+                 sub_rule=Tile(0, 0), player=None, name="*"):
+        super().__init__(sub_rule=sub_rule, game_state=PolarChessGameState(), player=player, name=name)
 
         self.step_size = step_size
         self.clockwise = clockwise
@@ -185,7 +187,7 @@ class DiagonalMove(PatternRule):
 
 
 def lion(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player).named('L'),
+    return piece(SimpleCapture(game_state, player, name='L'),
                  RadialMove(1, False),
                  RadialMove(-1, False),
                  AngularMove(1, False),
@@ -194,21 +196,21 @@ def lion(game_state, player, *coords):
 
 
 def leopard(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player).named('P'),
+    return piece(SimpleCapture(game_state, player, name='P'),
                  RadialMove(),
                  RadialMove(-1),
                  Tile(*coords))
 
 
 def bear(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player).named('B'),
+    return piece(SimpleCapture(game_state, player, name='B'),
                  AngularMove(),
                  AngularMove(-1),
                  Tile(*coords))
 
 
 def tiger(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player).named('T'),
+    return piece(SimpleCapture(game_state, player, name='T'),
                  AngularMove(),
                  AngularMove(-1),
                  RadialMove(),
@@ -217,7 +219,7 @@ def tiger(game_state, player, *coords):
 
 
 def eagle(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player).named('E'),
+    return piece(SimpleCapture(game_state, player, name='E'),
                  DiagonalMove(1, True, True, True),
                  DiagonalMove(-1, True, True, True),
                  DiagonalMove(1, False, True, True),

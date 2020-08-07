@@ -3,18 +3,14 @@ from game_state import GameState, dictionary_max
 
 
 class Rule(ABC):
-    def __init__(self, game_state=None, player=None, sub_rule=None):
+    def __init__(self, game_state=None, player=None, sub_rule=None, name="*"):
         self.game_state = game_state
         self.player = player
         self.sub_rule = sub_rule
-        self.name = '*'
+        self.name = name
 
     def __repr__(self):
-        return self.name
-
-    def named(self, name):
-        self.name = name
-        return self
+        return str(self.name)
 
     @abstractmethod
     def get_legal_moves(self):
@@ -25,7 +21,7 @@ class Rule(ABC):
         pass
 
     @abstractmethod
-    def execute_move(self, move):
+    def execute_move(self, move):  # TODO add optional *args for open ended moves?
         """
         carries out instructions in move
         :param move: same type as an element of self.legal_moves() output
@@ -42,25 +38,43 @@ class Rule(ABC):
 
     @abstractmethod
     def get_utility(self):
+        """
+        :return: dictionary of values keyed by players. should be between 0 and 1
+        """
         pass
 
     @staticmethod
     def move_to_string(move):
+        """
+        :param move: same type as element of self.get_legal_moves()
+        :return: human - friendly string of move
+        """
         return str(move)
 
     def get_bottom_rule(self):
+        """
+        :return: last element of linked list of sub_rules ( =self.get_piece()[-1] )
+        """
         if self.sub_rule:
             return self.sub_rule.get_bottom_rule()
         else:
             return self
 
     def get_piece(self):
+        """
+        :return: linked list of sub_rules
+        """
         if self.sub_rule:
             return [self] + self.sub_rule.get_piece()
         else:
             return [self]
 
     def max_n(self, n):
+        """
+        searches game tree and applies max_n algorithm to evaluate current game
+        :param n: maximum depth of search
+        :return: evaluation of current game ( = utility from the end of the expected branch)
+        """
         legal = self.get_legal_moves()
         if n == 0 or not legal:
             return self.get_utility()

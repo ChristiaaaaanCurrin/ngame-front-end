@@ -5,14 +5,11 @@ from game_state import GameState
 
 class Tile(Rule):
     def __init__(self, *coords):
-        super().__init__()
+        super().__init__(name=self.coords)
         self.coords = coords
 
     def __eq__(self, other):
         return hasattr(other, 'coords') and self.coords == other.coords
-
-    def __repr__(self):
-        return str(self.coords)
 
     def get_legal_moves(self):
         return []
@@ -28,8 +25,8 @@ class Tile(Rule):
 
 
 class CoordinateRule(Rule, ABC):
-    def __init__(self, game_state=GameState(), player=None, sub_rule=None):
-        super().__init__(game_state=game_state, player=player, sub_rule=sub_rule)
+    def __init__(self, game_state=GameState(), player=None, sub_rule=None, name="*"):
+        super().__init__(game_state=game_state, player=player, sub_rule=sub_rule, name=name)
 
     def string_legal(self):
         string_legal = []
@@ -113,8 +110,8 @@ class CaptureRule(Rule, ABC):
 
 
 class SimpleCapture(CaptureRule):
-    def __init__(self, game_state=GameState(), player=None, sub_rule=None):
-        super().__init__(game_state=game_state, player=player, sub_rule=sub_rule)
+    def __init__(self, game_state=GameState(), player=None, sub_rule=None, name="*"):
+        super().__init__(game_state=game_state, player=player, sub_rule=sub_rule, name=name)
 
     @staticmethod
     def move_to_string(move):

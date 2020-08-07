@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from equality_modifiers import EqualityByArgs, EqualityByType
+from miscellaneous.equality_modifiers import EqualityByType
 
 # keep me
 
