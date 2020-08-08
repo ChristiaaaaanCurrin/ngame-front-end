@@ -5,8 +5,11 @@ from game_state import GameState
 
 class Tile(Rule):
     def __init__(self, *coords):
-        super().__init__(name=self.coords)
+        super().__init__()
         self.coords = coords
+
+    def __repr__(self):
+        return self.coords
 
     def __eq__(self, other):
         return hasattr(other, 'coords') and self.coords == other.coords

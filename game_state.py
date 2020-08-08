@@ -70,14 +70,14 @@ def max_n(game, max_depth):
                 game.revert()  # revert from current position to parent position
                 # utility of the position is the best child utility for the player to move
                 # utility of the position is added to the utility list of the parent
-                utility_tree[-2].append(dictionary_max(player_to_maximize, utility_tree.pop(-1)))
+                utility_tree[-2].append(max_by_key(player_to_maximize, utility_tree.pop(-1)))
                 move_tree.pop(-1)  # cut the explored branch from the tree
                 depth = depth - 1  # record change in depth
                 continue  # rerun loop from new game state
             # Can't go down or up? Must be done.
             else:
                 # utility of the position is the best child utility for the player to move
-                n_max_utility = dictionary_max(player_to_maximize, utility_tree[-1])
+                n_max_utility = max_by_key(player_to_maximize, utility_tree[-1])
                 break  # exit the loop
     return n_max_utility  # don't forget why you came here
 
@@ -103,7 +103,7 @@ def neural_net_training_data(game, game_state, n_max_depth, batch_size):
     return training_data  # don't forget to return
 
 
-def dictionary_max(key, dictionaries):
+def max_by_key(key, dictionaries):
     """
 
     :param key: a key in the dictionary

@@ -130,7 +130,9 @@ class TicTacToeGUI(GameGUI):
         lbl_board = Label(self.frm_out, text="")
         lbl_board.config(font=("Courier", 60))
         lbl_board.pack(fill=BOTH, expand=True)
-        return lbl_board
+        lbl_win = Label(self.frm_out, text="")
+        lbl_win.pack()
+        return lbl_board, lbl_win
 
     def update_board(self, *args):
         board = ""
@@ -142,11 +144,14 @@ class TicTacToeGUI(GameGUI):
                     board = board + "-"
                 board = board + "|"
             board = board + "\n"
-        self.board["text"] = board
+        self.board[0]["text"] = board
+
         if self.game.winners():
-            Label(self.frm_out, text="Winner: " + str(self.game.winners())).pack()
+            self.board[1]["text"] = "Winner: " + str(self.game.winners())
         elif not self.game.get_legal_moves():
-            Label(self.frm_out, text="Draw").pack()
+            self.board[1]["text"] = "Draw"
+        else:
+            self.board[1]["text"] = ""
 
 
 if __name__ == "__main__":

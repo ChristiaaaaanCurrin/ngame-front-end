@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from game_state import GameState, dictionary_max
+from game_state import GameState, max_by_key
+from random import sample, random
 
 
 class Rule(ABC):
@@ -69,25 +70,39 @@ class Rule(ABC):
         else:
             return [self]
 
-    def max_n(self, n):
+    def max_n(self, depth, width=None, temp=1, k=1):
         """
         searches game tree and applies max_n algorithm to evaluate current game
-        :param n: maximum depth of search
+        :param depth: maximum depth of search
+        :param width: maximum branches from this node
+        :param temp: probability of selecting the child branches randomly
+        :param k: depth of intermediate searches for determining continuation line
         :return: evaluation of current game ( = utility from the end of the expected branch)
         """
+        if self.player:
+            player = self.player
+        else:
+            player = self.get_bottom_rule().player
         legal = self.get_legal_moves()
-        if n == 0 or not legal:
+        if width and width < len(legal):
+            if temp < random():
+                def evaluate(m):
+                    self.execute_move(m)
+                    utility = self.max_n(k)[player]
+                    self.undo_move(m)
+                    return utility
+                legal = sorted(legal, key=evaluate)[:width]
+            else:
+                legal = sample(self.get_legal_moves(), width)
+        if depth == 0 or not legal:
             return self.get_utility()
         else:
             utilities = []
             for move in legal:
                 self.execute_move(move)
-                utilities.append(self.max_n(n-1))
+                utilities.append(self.max_n(depth - 1, width, temp))
                 self.undo_move(move)
-            if self.player:
-                return dictionary_max(self.player, utilities)
-            elif self.sub_rule:
-                return dictionary_max(self.get_bottom_rule().player, utilities)
+            return max_by_key(player, utilities)
 
 
 # -- Game -------------------------------------------------
@@ -188,7 +203,7 @@ class RuleSum(Rule):  # TODO This may be a little janky and unnecessary...
         return this_piece
 
     def get_utility(self):
-        return dictionary_max(self.player, [rule.get_utility() for rule in self.sub_rule])
+        return max_by_key(self.player, [rule.get_utility() for rule in self.sub_rule])
 
 
 # -- Piece creator Method ---------------------------------

@@ -1,6 +1,6 @@
 from game_state import GameState
 from rule import piece, SimpleTurn, Rule
-from player import Player, play_on
+from player import play_on
 from coordinate_rule import SimpleCapture, Tile, PatternRule
 from timeit import default_timer
 
@@ -234,17 +234,15 @@ if __name__ == "__main__":
     y = ChessPlayer('y', s, Ly)
     b = ChessPlayer('b', s, Lb)
     g = SimpleTurn(s, y, b)
-
     s.add_pieces(bear(s, 'b', 1, 0))
-    print(g.get_bottom_rule().player)
-    for m in g.get_legal_moves():
-        print(g.move_to_string(m))
+
     print("BEGIN EVALUATION")
     start = default_timer()
-    print(g.max_n(4))
-    stop = default_timer()
+    for n in range(1, 10):
+        print("***", n, "***")
+        print(g.max_n(depth=10, width=1, temp=0, k=n))
+        print(default_timer() - start)
     print("END EVALUATION")
-    print("time to complete:", stop - start)
 
 
 '''
