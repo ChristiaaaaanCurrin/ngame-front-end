@@ -1,14 +1,16 @@
 from abc import ABC, abstractmethod
-from game_state import GameState, max_by_key
+from game_state import GameState
+from evaluator import max_by_key
 from random import sample, random
 
 
 class Rule(ABC):
-    def __init__(self, game_state=None, player=None, sub_rule=None, name="*"):
+    def __init__(self, game_state=GameState(), sub_rule=None, **kwargs):
         self.game_state = game_state
-        self.player = player
         self.sub_rule = sub_rule
-        self.name = name
+        self.name = "*"
+        self.player = None
+        self.__dict__.update(kwargs)
 
     def __repr__(self):
         return str(self.name)
@@ -61,6 +63,14 @@ class Rule(ABC):
         else:
             return self
 
+    def get_player(self):
+        if self.player:
+            return self.player
+        elif self.sub_rule:
+            return self.sub_rule.get_player()
+        else:
+            return None
+
     def get_piece(self):
         """
         :return: linked list of sub_rules
@@ -70,7 +80,7 @@ class Rule(ABC):
         else:
             return [self]
 
-    def max_n(self, depth, width=None, temp=1, k=1):
+    def max_n(self, depth, width=-1, temp=1, k=1):
         """
         searches game tree and applies max_n algorithm to evaluate current game
         :param depth: maximum depth of search
@@ -84,7 +94,7 @@ class Rule(ABC):
         else:
             player = self.get_bottom_rule().player
         legal = self.get_legal_moves()
-        if width and width < len(legal):
+        if 0 <= width < len(legal):
             if temp < random():
                 def evaluate(m):
                     self.execute_move(m)
@@ -105,32 +115,16 @@ class Rule(ABC):
             return max_by_key(player, utilities)
 
 
-# -- Game -------------------------------------------------
+# -- Player and Turn Handlers -----------------------------
 
-class Game(Rule, ABC):
-    def __init__(self, game_state=GameState(), sub_rule=None):
-        super().__init__(game_state=game_state, player=None, sub_rule=sub_rule)
-        self.game_state.add_pieces(self)
+class SimpleTurn(Rule):
+    def __init__(self, *sub_rules, turn=0, **kwargs):
+        self.sequence = sub_rules
+        self.turn = turn % len(self.sequence)
+        super().__init__(sub_rule=self.sequence[0], **kwargs)
 
     def __repr__(self):
         return 'turn: ' + str(self.sub_rule)
-
-    def execute_move(self, move):
-        self.sub_rule = move[0]
-        for rule, sub_move in move[2]:
-            rule.execute_move(sub_move)
-
-    def undo_move(self, move):
-        for rule, sub_move in move[2]:
-            rule.undo_move(sub_move)
-        self.sub_rule = move[1]
-
-
-class SimpleTurn(Game):
-    def __init__(self, game_state, *sub_rules, turn=0):
-        self.sequence = sub_rules
-        self.turn = turn % len(self.sequence)
-        super().__init__(game_state=game_state, sub_rule=self.sequence[0])
 
     def get_legal_moves(self):
         legal = []
@@ -164,54 +158,104 @@ class SimpleTurn(Game):
         return utility
 
 
-# -- Combining Rule ---------------------------------------
+class WinLoseDraw(Rule, ABC):
+    def __init__(self, *players, sub_rule=None, **kwargs):
+        super().__init__(sub_rule=sub_rule, **kwargs)
+        self.players = players
+        self.active = list(self.players)
+        self.winners = []
+        self.losers = []
+        self.drawers = []
+        self.history = []
 
-class RuleSum(Rule):  # TODO This may be a little janky and unnecessary...
-    def __init__(self, game_state=GameState(), player=None, *sub_rules):
-        self.all_subs = []
-        for rule in sub_rules:
-            self.all_subs.append(rule)
-        super().__init__(game_state=game_state, player=player, sub_rule=sub_rules)
+    @abstractmethod
+    def does_win(self, player):
+        pass
 
-    def __repr__(self):
-        return 'Sum' + str([str(rule) for rule in self.sub_rule])
+    @abstractmethod
+    def does_lose(self, player):
+        pass
+
+    @abstractmethod
+    def does_draw(self, player):
+        pass
+
+    @abstractmethod
+    def win_lose_draw(self):
+        pass
 
     def get_legal_moves(self):
-        legal = []
-        for rule in self.sub_rule:
-            for sub_move in rule.get_legal_moves():
-                legal.append((rule, sub_move))
-        return legal
+        if self.active:
+            return self.sub_rule.get_legal_moves()
+        else:
+            return []
 
     def execute_move(self, move):
-        rule, sub_move = move
-        rule.execute_move(sub_move)
+        self.sub_rule.execute_move(move)
+        self.history.append((self.winners, self.losers, self.drawers, self.active))
+        self.win_lose_draw()
 
     def undo_move(self, move):
-        rule, sub_move = move
-        rule.undo_move(sub_move)
+        self.sub_rule.undo_move(move)
+        self.winners, self.losers, self.drawers, self.active = self.history.pop(-1)
 
-    def get_bottom_rule(self):
-        if self.sub_rule:
-            return self.sub_rule[-1].get_bottom_rule()
-        else:
-            return self
 
-    def get_piece(self):
-        this_piece = [self]
-        [this_piece.extend(rule.get_piece()) for rule in self.sub_rule]
-        return this_piece
+class ZeroSum(WinLoseDraw, ABC):
+    def win_lose_draw(self):
+        win = []
+        lose = []
+        draw = []
+        for player in enumerate(self.active):
+            if self.does_win(player):
+                win.append(player)
+                self.active.remove(player)
+            elif self.does_lose(player):
+                lose.append(player)
+                self.active.remove(player)
+            elif self.does_draw(player):
+                draw.append(player)
+                self.active.remove(player)
+        self.drawers.extend(draw)
+        self.losers.extend(lose)
+        self.winners = win
+        if self.winners:
+            self.losers.extend(self.active)
+            self.losers.extend(self.drawers)
+            self.active.clear()
+            self.drawers.clear()
 
     def get_utility(self):
-        return max_by_key(self.player, [rule.get_utility() for rule in self.sub_rule])
+        utilities = {}
+        active = len(self.active)
+        draw = len(self.drawers)
+        sharing_players = active + draw
+        if self.winners:
+            utilities[self.winners] = 1
+        for player in self.losers:
+            utilities[player] = 0
+        for player in self.drawers:
+            utilities[player] = 1 / sharing_players
+        if self.active:
+            total_utility = sum(map(lambda p: self.sub_rule.get_utility()[p], self.active)) * sharing_players / active
+            for player in self.active:
+                utilities[player] = self.sub_rule.get_utility()[player] / total_utility
+        return utilities
 
 
-# -- Piece creator Method ---------------------------------
+# -- Piece creator Methods --------------------------------
 
 def piece(*rules):
     player = rules[0].player
     for i, rule in enumerate(rules[:-1]):
         rule.sub_rule = rules[i+1]
         rule.player = player
+    rules[-1].player = player
     rules[0].game_state.add_pieces(rules[0])
     return rules[0]
+
+
+def stack(*rules):
+    for i, rule in enumerate(rules[:-1]):
+        rule.sub_rule = rules[i+1]
+        rules[0].game_state.add_rules(rules[0])
+        return rules[0]

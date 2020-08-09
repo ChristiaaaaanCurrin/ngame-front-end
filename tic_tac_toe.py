@@ -155,6 +155,7 @@ class TicTacToeGUI(GameGUI):
 
 
 if __name__ == "__main__":
-    g = TicTacToe(explore=True)
-    gui = TicTacToeGUI(g)
-    gui.window.mainloop()
+    g = TicTacToe(rows=3, columns=3)
+    print(g.win_masks)
+    print(g.winners())
+    print(g.max_n(-1, 1, 1, 0))

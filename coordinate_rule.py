@@ -9,7 +9,7 @@ class Tile(Rule):
         self.coords = coords
 
     def __repr__(self):
-        return self.coords
+        return str(self.coords)
 
     def __eq__(self, other):
         return hasattr(other, 'coords') and self.coords == other.coords
@@ -28,8 +28,11 @@ class Tile(Rule):
 
 
 class CoordinateRule(Rule, ABC):
-    def __init__(self, game_state=GameState(), player=None, sub_rule=None, name="*"):
-        super().__init__(game_state=game_state, player=player, sub_rule=sub_rule, name=name)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def __repr__(self):
+        return str(self.name) + str(self.get_bottom_rule())
 
     def string_legal(self):
         string_legal = []
@@ -82,6 +85,17 @@ class CaptureRule(Rule, ABC):
     def __eq__(self, other):
         return other.get_bottom_rule() == self.get_bottom_rule()
 
+    def __repr__(self):
+        return str(self.name) + str(self.get_bottom_rule())
+
+    @staticmethod
+    def move_to_string(move):
+        sub_rule, (new_coords, old_coords), *to_capture = move
+        string = str(new_coords)
+        if to_capture:
+            string = string + 'X' + str(to_capture).replace('[', '').replace(']', '')
+        return string
+
     def does_attack_piece(self, piece):
         """
         :param piece: piece that self might be 'attacking'
@@ -113,27 +127,26 @@ class CaptureRule(Rule, ABC):
 
 
 class SimpleCapture(CaptureRule):
-    def __init__(self, game_state=GameState(), player=None, sub_rule=None, name="*"):
-        super().__init__(game_state=game_state, player=player, sub_rule=sub_rule, name=name)
-
-    @staticmethod
-    def move_to_string(move):
-        sub_rule, (new_coords, old_coords), *to_capture = move
-        string = str(new_coords)
-        if to_capture:
-            string = string + 'X' + str(to_capture).replace('[', '').replace(']', '')
-        return string
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def get_legal_moves(self):
         legal = []
-        for new_coords, old_coords in self.sub_rule.get_legal_moves():
+        for new_coords, old_coords, *sub_captures in self.sub_rule.get_legal_moves():
             to_capture = []
             for top_rule in self.game_state.get_top_rules():
                 if hasattr(top_rule.get_bottom_rule(), 'coords') and top_rule.get_bottom_rule().coords == new_coords:
                     to_capture.append(top_rule)
-            legal.append((self.sub_rule, (new_coords, old_coords), *to_capture))
+            legal.append((self.sub_rule, (new_coords, old_coords), *to_capture, *sub_captures))
         return legal
 
     def get_utility(self):
         return {self.player: 1}
 
+
+class NoCapture(CaptureRule):
+    def get_legal_moves(self):
+        return self.sub_rule.get_legal_moves()
+
+    def get_utility(self):
+        return {self.player: 1}

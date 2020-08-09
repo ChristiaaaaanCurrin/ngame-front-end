@@ -1,32 +1,30 @@
 from game_state import GameState
-from rule import piece, SimpleTurn, Rule
-from player import play_on
+from rule import piece, SimpleTurn, Rule, ZeroSum, stack
 from coordinate_rule import SimpleCapture, Tile, PatternRule
 from timeit import default_timer
 
 
-class PolarChessGameState(GameState):
-    def __init__(self, *rings):
-        if rings:
-            self.rings = rings
-        else:
-            self.rings = (1, 4, 12, 24, 24)
+class ChessGame(ZeroSum):
+    def does_lose(self, player):
+        return self.get_bottom_rule().player == player\
+               and self.get_bottom_rule().is_in_check()\
+               and not self.get_bottom_rule().get_legal_moves()
 
-        super().__init__()
+    def does_win(self, player):
+        return self.active == [player] and not self.drawers
 
-    def __repr__(self):
-        return str(self.rings)
+    def does_draw(self, player):
+        return not self.get_legal_moves()
 
 
 class ChessPlayer(Rule):
-    def __init__(self, name, game_state=GameState(), *kings, status=play_on):
+    def __init__(self, name, game_state=GameState(), *kings):
         super().__init__(name=name, player=name, game_state=game_state)
-        self.status = status
         self.kings = kings
         for king in self.kings:
             king.player = self.player
 
-    def get_legal_moves(self):  # TODO include status changes in legal moves? Win(ABC)? ZeroSum(Win)?
+    def get_legal_moves(self):
         legal = []
         for top_rule in self.game_state.get_top_rules(self.player):
             for move in top_rule.get_legal_moves():
@@ -56,12 +54,12 @@ class ChessPlayer(Rule):
         sub_rule.undo_move(sub_move)
 
     def get_utility(self):
-        return {self.player: self.status.utility_value(len(self.get_legal_moves()))}
+        return {self.player: len(self.get_legal_moves())}
 
 
 class RadialMove(PatternRule):
-    def __init__(self, step_size=1, patterns=True, jumps=False, sub_rule=Tile(0, 0), player=None, name="*"):
-        super().__init__(sub_rule=sub_rule, game_state=PolarChessGameState(), player=player, name=name)
+    def __init__(self, step_size=1, patterns=True, jumps=False, sub_rule=Tile(0, 0), player=None, **kwargs):
+        super().__init__(sub_rule=sub_rule, game_state=GameState(), player=player, **kwargs)
         self.step_size = step_size
         self.patterns = patterns
         self.jumps = jumps
@@ -103,8 +101,8 @@ class RadialMove(PatternRule):
 
 
 class AngularMove(PatternRule):
-    def __init__(self, step_size=1, patterns=True, jumps=False, sub_rule=Tile(0, 0), player=None, name="*"):
-        super().__init__(sub_rule=sub_rule, game_state=PolarChessGameState(), player=player, name=name)
+    def __init__(self, step_size=1, patterns=True, jumps=False, sub_rule=Tile(0, 0), **kwargs):
+        super().__init__(sub_rule=sub_rule, **kwargs)
         self.step_size = step_size
         self.patterns = patterns
         self.jumps = jumps
@@ -136,9 +134,8 @@ class AngularMove(PatternRule):
 
 
 class DiagonalMove(PatternRule):
-    def __init__(self, step_size=1, clockwise=True, patterns=True, jumps=False,
-                 sub_rule=Tile(0, 0), player=None, name="*"):
-        super().__init__(sub_rule=sub_rule, game_state=PolarChessGameState(), player=player, name=name)
+    def __init__(self, step_size=1, clockwise=True, patterns=True, jumps=False, sub_rule=Tile(0, 0), **kwargs):
+        super().__init__(sub_rule=sub_rule, **kwargs)
 
         self.step_size = step_size
         self.clockwise = clockwise
@@ -152,7 +149,7 @@ class DiagonalMove(PatternRule):
         size = rings[r]
         step = self.step_size
 
-        if 0 <= (r + step) < len(rings):
+        if 0 <= (r + step) < len(rings) and rings[r + step] > 1 and rings[r] > 1:
             new_size = rings[r + step]
             if self.clockwise:
                 new_t = new_size - (size - t - 1) * new_size // size
@@ -187,7 +184,7 @@ class DiagonalMove(PatternRule):
 
 
 def lion(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player, name='L'),
+    return piece(SimpleCapture(game_state=game_state, player=player, name='L'),
                  RadialMove(1, False),
                  RadialMove(-1, False),
                  AngularMove(1, False),
@@ -196,21 +193,21 @@ def lion(game_state, player, *coords):
 
 
 def leopard(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player, name='P'),
+    return piece(SimpleCapture(game_state=game_state, player=player, name='P'),
                  RadialMove(),
                  RadialMove(-1),
                  Tile(*coords))
 
 
 def bear(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player, name='B'),
+    return piece(SimpleCapture(game_state=game_state, player=player, name='B'),
                  AngularMove(),
                  AngularMove(-1),
                  Tile(*coords))
 
 
 def tiger(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player, name='T'),
+    return piece(SimpleCapture(game_state=game_state, player=player, name='T'),
                  AngularMove(),
                  AngularMove(-1),
                  RadialMove(),
@@ -219,7 +216,7 @@ def tiger(game_state, player, *coords):
 
 
 def eagle(game_state, player, *coords):
-    return piece(SimpleCapture(game_state, player, name='E'),
+    return piece(SimpleCapture(game_state=game_state, player=player, name='E'),
                  DiagonalMove(1, True, True, True),
                  DiagonalMove(-1, True, True, True),
                  DiagonalMove(1, False, True, True),
@@ -228,21 +225,23 @@ def eagle(game_state, player, *coords):
 
 
 if __name__ == "__main__":
-    s = PolarChessGameState()
-    Ly = lion(s, 'y', 4, 23)
-    Lb = lion(s, 'b', 0, 0)
-    y = ChessPlayer('y', s, Ly)
-    b = ChessPlayer('b', s, Lb)
-    g = SimpleTurn(s, y, b)
-    s.add_pieces(bear(s, 'b', 1, 0))
+    piece_state = GameState(rings=(1, 4, 12, 24, 24))
+    y = ChessPlayer('y', piece_state, lion(piece_state, 'y', 2, 1))
+    b = ChessPlayer('b', piece_state, lion(piece_state, 'b', 3,  11))
+    bear(piece_state, 'b', 3, 0)
+    bear(piece_state, 'y', 3, 4)
+    bear(piece_state, 'b', 3, 10)
+    bear(piece_state, 'y', 3, 5)
+    g = stack(ChessGame('y', 'b'), SimpleTurn(y, b, game_state=piece_state))
 
-    print("BEGIN EVALUATION")
-    start = default_timer()
-    for n in range(1, 10):
-        print("***", n, "***")
-        print(g.max_n(depth=10, width=1, temp=0, k=n))
-        print(default_timer() - start)
-    print("END EVALUATION")
+    if True:
+        print("BEGIN EVALUATION")
+        start = default_timer()
+        for n in range(1, 6):
+            print("***", n, "***")
+            print(g.max_n(depth=2, width=1, temp=0, k=n))
+            print(default_timer() - start)
+        print("END EVALUATION")
 
 
 '''
