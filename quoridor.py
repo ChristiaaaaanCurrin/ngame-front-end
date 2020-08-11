@@ -123,13 +123,13 @@ def quoridor(players=2, walls=20, rows=9, columns=9):
         position = ((0, columns//2), (rows-1, columns//2), (0, rows//2), (columns-1, rows//2))[p.side]
         piece(Pawn(), Tile(*position), game_state=game_state, keys=("pawns", p.player), player=p.player)
 
-    game = piece(QuoridorGame(*[p.name for p in ps]), SimpleTurn(*ps), game_state=game_state)
+    game = piece(QuoridorGame(*[p.player for p in ps]), SimpleTurn(*ps), game_state=game_state)
     return game
 
 
 if __name__ == "__main__":
     test_game = quoridor()
-    print(test_game.does_win('p1'))
+    print(test_game.max_n(5, 5, 1, 0))
 
 
 """
