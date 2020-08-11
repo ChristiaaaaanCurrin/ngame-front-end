@@ -5,21 +5,31 @@ from random import sample, random
 
 
 class Rule(ABC):
-    def __init__(self, game_state=GameState(), sub_rule=None, **kwargs):
-        self.game_state = game_state
-        self.sub_rule = sub_rule
+    def __init__(self, **kwargs):
+        self.game_state = GameState()
+        self.keys = ['state']
+        self.watch = []
+        self.sub_rule = None
         self.name = "*"
         self.player = None
         self.__dict__.update(kwargs)
 
-    def __repr__(self):
-        return str(self.name)
+    def __str__(self):
+        return str(self.name) + str(self.sub_rule)
+
+    def requirements(self):
+        requirements = {}
+        if self.sub_rule:
+            requirements.update(self.sub_rule.requirements())
+        return requirements
+
+    def minimal(self):
+        return type('Minimal' + self.__name__, (object,), self.requirements())
 
     @abstractmethod
     def get_legal_moves(self):
         """
-        :return: list of legal moves for self in game state
-                 moves must contain enough information to be reversed
+        :return: list of legal moves for self, moves must contain enough information to be reversed
         """
         pass
 
@@ -89,10 +99,8 @@ class Rule(ABC):
         :param k: depth of intermediate searches for determining continuation line
         :return: evaluation of current game ( = utility from the end of the expected branch)
         """
-        if self.player:
-            player = self.player
-        else:
-            player = self.get_bottom_rule().player
+
+        player = self.get_player()
         legal = self.get_legal_moves()
         if 0 <= width < len(legal):
             if temp < random():
@@ -123,7 +131,7 @@ class SimpleTurn(Rule):
         self.turn = turn % len(self.sequence)
         super().__init__(sub_rule=self.sequence[0], **kwargs)
 
-    def __repr__(self):
+    def __str__(self):
         return 'turn: ' + str(self.sub_rule)
 
     def get_legal_moves(self):
@@ -205,16 +213,13 @@ class ZeroSum(WinLoseDraw, ABC):
         win = []
         lose = []
         draw = []
-        for player in enumerate(self.active):
+        for p, player in enumerate(self.active):
             if self.does_win(player):
-                win.append(player)
-                self.active.remove(player)
+                win.append(self.active.pop(p))
             elif self.does_lose(player):
-                lose.append(player)
-                self.active.remove(player)
+                lose.append(self.active.pop(p))
             elif self.does_draw(player):
-                draw.append(player)
-                self.active.remove(player)
+                draw.append(self.active.pop(p))
         self.drawers.extend(draw)
         self.losers.extend(lose)
         self.winners = win
@@ -229,8 +234,8 @@ class ZeroSum(WinLoseDraw, ABC):
         active = len(self.active)
         draw = len(self.drawers)
         sharing_players = active + draw
-        if self.winners:
-            utilities[self.winners] = 1
+        for player in self.winners:
+            utilities[player] = 1
         for player in self.losers:
             utilities[player] = 0
         for player in self.drawers:
@@ -242,20 +247,12 @@ class ZeroSum(WinLoseDraw, ABC):
         return utilities
 
 
-# -- Piece creator Methods --------------------------------
+# -- Piece Creator Functions ------------------------------
 
-def piece(*rules):
-    player = rules[0].player
+def piece(*rules, **kwargs):
     for i, rule in enumerate(rules[:-1]):
         rule.sub_rule = rules[i+1]
-        rule.player = player
-    rules[-1].player = player
-    rules[0].game_state.add_pieces(rules[0])
+        rule.__dict__.update(kwargs)
+    rules[-1].__dict__.update(kwargs)
+    rules[0].game_state.add_rules(rules[0])
     return rules[0]
-
-
-def stack(*rules):
-    for i, rule in enumerate(rules[:-1]):
-        rule.sub_rule = rules[i+1]
-        rules[0].game_state.add_rules(rules[0])
-        return rules[0]

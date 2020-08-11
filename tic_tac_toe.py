@@ -158,4 +158,6 @@ if __name__ == "__main__":
     g = TicTacToe(rows=3, columns=3)
     print(g.win_masks)
     print(g.winners())
-    print(g.max_n(-1, 1, 1, 0))
+    start = default_timer()
+    print(g.max_n(-1, -1, 0, 0))
+    print(default_timer()-start)

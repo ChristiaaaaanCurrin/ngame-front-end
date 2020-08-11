@@ -1,5 +1,5 @@
 from game_state import GameState
-from rule import piece, SimpleTurn, Rule, ZeroSum, stack
+from rule import piece, SimpleTurn, Rule, ZeroSum
 from coordinate_rule import SimpleCapture, Tile, PatternRule
 from timeit import default_timer
 
@@ -18,11 +18,14 @@ class ChessGame(ZeroSum):
 
 
 class ChessPlayer(Rule):
-    def __init__(self, name, game_state=GameState(), *kings):
-        super().__init__(name=name, player=name, game_state=game_state)
+    def __init__(self, *kings, **kwargs):
+        super().__init__(**kwargs)
         self.kings = kings
         for king in self.kings:
             king.player = self.player
+
+    def __str__(self):
+        return str(self.player)
 
     def get_legal_moves(self):
         legal = []
@@ -54,12 +57,12 @@ class ChessPlayer(Rule):
         sub_rule.undo_move(sub_move)
 
     def get_utility(self):
-        return {self.player: len(self.get_legal_moves())}
+        return {self.player: len(self.get_legal_moves())}  # TODO this takes too long (0.61 seconds)
 
 
 class RadialMove(PatternRule):
-    def __init__(self, step_size=1, patterns=True, jumps=False, sub_rule=Tile(0, 0), player=None, **kwargs):
-        super().__init__(sub_rule=sub_rule, game_state=GameState(), player=player, **kwargs)
+    def __init__(self, step_size=1, patterns=True, jumps=False, sub_rule=Tile(0, 0), **kwargs):
+        super().__init__(sub_rule=sub_rule, **kwargs)
         self.step_size = step_size
         self.patterns = patterns
         self.jumps = jumps
@@ -116,9 +119,8 @@ class AngularMove(PatternRule):
 
     def does_skip(self, coords):
         for rule in self.game_state.get_top_rules(self.player):
-            if hasattr(rule.get_bottom_rule(), 'coords'):
-                if rule.get_bottom_rule().coords == coords:
-                    return True
+            if rule.get_bottom_rule().coords == coords:
+                return True
         else:
             return False
 
@@ -126,9 +128,8 @@ class AngularMove(PatternRule):
         if not self.patterns:
             return True
         for rule in self.game_state.get_top_rules():
-            if hasattr(rule.get_bottom_rule(), 'coords'):
-                if rule.get_bottom_rule().coords == coords:
-                    return True
+            if rule.get_bottom_rule().coords == coords:
+                return True
         else:
             return False
 
@@ -163,10 +164,9 @@ class DiagonalMove(PatternRule):
         return []
 
     def does_skip(self, coords):
-        for rule in self.game_state.get_top_rules(self.player):
-            if hasattr(rule.get_bottom_rule(), 'coords'):
-                if rule.get_bottom_rule().coords == coords:
-                    return True
+        for rule in self.game_state.get_top_rules(*self.watch):
+            if rule.get_bottom_rule().coords == coords:
+                return True
         else:
             return False
 
@@ -184,64 +184,77 @@ class DiagonalMove(PatternRule):
 
 
 def lion(game_state, player, *coords):
-    return piece(SimpleCapture(game_state=game_state, player=player, name='L'),
+    return piece(SimpleCapture(),
                  RadialMove(1, False),
                  RadialMove(-1, False),
                  AngularMove(1, False),
                  AngularMove(-1, False),
-                 Tile(*coords))
+                 Tile(*coords),
+                 game_state=game_state, keys=('piece', player), player=player, name='L')
 
 
 def leopard(game_state, player, *coords):
-    return piece(SimpleCapture(game_state=game_state, player=player, name='P'),
+    return piece(SimpleCapture(),
                  RadialMove(),
                  RadialMove(-1),
-                 Tile(*coords))
+                 Tile(*coords),
+                 game_state=game_state, keys=('piece', player), player=player, name='P'+str(player))
 
 
 def bear(game_state, player, *coords):
-    return piece(SimpleCapture(game_state=game_state, player=player, name='B'),
+    return piece(SimpleCapture(),
                  AngularMove(),
                  AngularMove(-1),
-                 Tile(*coords))
+                 Tile(*coords),
+                 game_state=game_state, keys=('piece', player), player=player, name='B'+str(player))
 
 
 def tiger(game_state, player, *coords):
-    return piece(SimpleCapture(game_state=game_state, player=player, name='T'),
+    return piece(SimpleCapture(),
                  AngularMove(),
                  AngularMove(-1),
                  RadialMove(),
                  RadialMove(-1),
-                 Tile(*coords))
+                 Tile(*coords),
+                 game_state=game_state, keys=('piece', player), player=player, name='T'+str(player))
 
 
 def eagle(game_state, player, *coords):
-    return piece(SimpleCapture(game_state=game_state, player=player, name='E'),
+    return piece(SimpleCapture(),
                  DiagonalMove(1, True, True, True),
                  DiagonalMove(-1, True, True, True),
                  DiagonalMove(1, False, True, True),
                  DiagonalMove(-1, False, True, True),
-                 Tile(*coords))
+                 Tile(*coords),
+                 game_state=game_state, keys=('piece', player), player=player, name='E'+str(player))
+
+
+def polar_chess():
+    state = GameState(rings=(1, 2, 12, 24, 24))
+    Ly = lion(state, 'y', 4, 1)
+    Lb = lion(state, 'b', 1, 2)
+    eagle(state, 'b', 2, 6)
+    #bear(state, 'y', 3, 3)
+    #bear(state, 'y', 4, 23)
+
+    y = ChessPlayer(Ly, name='y', player='y', game_state=state)
+    b = ChessPlayer(Lb, name='y', player='b', game_state=state)
+
+    game = piece(ChessGame('y', 'b'), SimpleTurn(y, b), game_state=state)
+    return game
 
 
 if __name__ == "__main__":
-    piece_state = GameState(rings=(1, 4, 12, 24, 24))
-    y = ChessPlayer('y', piece_state, lion(piece_state, 'y', 2, 1))
-    b = ChessPlayer('b', piece_state, lion(piece_state, 'b', 3,  11))
-    bear(piece_state, 'b', 3, 0)
-    bear(piece_state, 'y', 3, 4)
-    bear(piece_state, 'b', 3, 10)
-    bear(piece_state, 'y', 3, 5)
-    g = stack(ChessGame('y', 'b'), SimpleTurn(y, b, game_state=piece_state))
-
-    if True:
-        print("BEGIN EVALUATION")
-        start = default_timer()
-        for n in range(1, 6):
+    test_game = polar_chess()
+    if 1 > 0:
+        print("******************\n", "BEGIN EVALUATION")
+        for n in range(0, 10):
             print("***", n, "***")
-            print(g.max_n(depth=2, width=1, temp=0, k=n))
+            start = default_timer()
+            print(str(test_game.game_state))
+            print(test_game.max_n(depth=3, width=1, temp=0, k=n))
             print(default_timer() - start)
-        print("END EVALUATION")
+        print(" END EVALUATION\n******************")
 
 
 '''
