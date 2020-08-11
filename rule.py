@@ -10,7 +10,7 @@ class Rule(ABC):
         self.keys = ['state']
         self.watch = []
         self.sub_rule = None
-        self.name = "*"
+        self.name = "rule"
         self.player = None
         self.__dict__.update(kwargs)
 
