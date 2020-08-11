@@ -25,7 +25,7 @@ class QuoridorPlayer(Rule):
     def __init__(self, side=0, walls=0, **kwargs):
         super().__init__(**kwargs)
         self.side = side % 4
-        self.walls = [Wall(0, 0, 0, game_state=self.game_state, path=['walls']) for n in range(walls)]
+        self.walls = [Wall(game_state=self.game_state, path=['walls']) for n in range(walls)]
         self.used = []
 
     def get_legal_moves(self):
@@ -82,13 +82,15 @@ class Pawn(PatternRule):
 class Wall(Tile):
     def get_legal_moves(self):
         legal = []
-        for row in range(self.game_state.rows):
-            for column in range(self.game_state.columns):
-                for wall in self.game_state.get_top_rules("walls"):
-                    if wall.coords[:1] == (row, column):
-                        break
-                else:
-                    for orientation in (0, 1):
+        for row in range(self.game_state.rows - 1):
+            for column in range(self.game_state.columns - 1):
+                for orientation in (0, 1):
+                    coords = row, column, orientation
+                    for wall in self.game_state.get_top_rules("walls"):
+                        if wall.coords[:1] == coords[:1]\
+                          or wall.coords == ((row - (orientation ^ 1)), column - orientation, orientation):
+                            break
+                    else:
                         legal.append((row, column, orientation))
         return legal
 
@@ -102,20 +104,21 @@ class Wall(Tile):
 
 class PathFinder(Pawn):
     def does_stop_on(self, coords):
-        pass
+        return False
 
     def does_skip(self, coords):
-        pass
+        return False
 
 
 def quoridor(players=2, walls=20, rows=9, columns=9):
     game_state = GameState(rows=rows, columns=columns)
 
     ps = [QuoridorPlayer(side=side,
-                         player=str(side + 1),
-                         name=str(side + 1),
+                         player='p' + str(side + 1),
+                         name='p' + str(side + 1),
                          walls=walls//players,
                          game_state=game_state) for side in range(players)]
+
     for p in ps:
         position = ((0, columns//2), (rows-1, columns//2), (0, rows//2), (columns-1, rows//2))[p.side]
         piece(Pawn(), Tile(*position), game_state=game_state, keys=("pawns", p.player), player=p.player)
@@ -126,7 +129,18 @@ def quoridor(players=2, walls=20, rows=9, columns=9):
 
 if __name__ == "__main__":
     test_game = quoridor()
-    print(test_game.game_state)
-    print(test_game.get_utility())
-    print(str(test_game.sub_rule.sequence))
-    print(test_game.max_n(10, 3, 1, 0))
+    print(test_game.does_win('p1'))
+
+
+"""
+ 09 08 07 06 05 04 03 02 01 00
+ __|__|__|__|p1|__|__|__|__ 01
+ __|__|__|__|__|__|__|__|__ 02
+ __|__|__|__|__|__|__|__|__ 03
+ __|__|__|__|__|__|__|__|__ 04
+ p4|__|__|__|__|__|__|__|p3 05
+ __|__|__|__|__|__|__|__|__ 06
+ __|__|__|__|__|__|__|__|__ 07
+ __|__|__|__|__|__|__|__|__ 08
+   |  |  |  |p2|  |  |  |   09
+"""
