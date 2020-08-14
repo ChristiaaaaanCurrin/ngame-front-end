@@ -1,12 +1,10 @@
 from rule import Rule
 from gui import GameGUI
 from tkinter import *
-from timeit import default_timer
 
 
 class TicTacToe(Rule):
-    def __init__(self, players=('X', 'O'), turn=0, rows=3, columns=3, to_win=3, explore=False):
-        super().__init__(player=players[turn])
+    def __init__(self, players=('X', 'O'), turn=0, rows=3, columns=3, to_win=3, explore=False, **kwargs):
         self.players = players
         self.turn = turn
         self.rows = rows
@@ -14,12 +12,18 @@ class TicTacToe(Rule):
         self.to_win = to_win
         self.explore = explore
         self.history = []
+        self.board = []
+        self.win_masks = []
         self.occupancy = {}
+        super().__init__(player=players[turn], **kwargs)
+
+    def refresh_init(self):
+        self.game_state.add_rules(self)
+        super().refresh_init()
+
         for player in self.players:
             self.occupancy[player] = 0
-        self.board = [[None for c in range(columns)] for r in range(rows)]
-
-        self.win_masks = []
+        self.board = [[None for c in range(self.columns)] for r in range(self.rows)]
 
         row_mask = (1 << self.to_win) - 1
         for r in range(self.rows):
@@ -68,19 +72,21 @@ class TicTacToe(Rule):
             self.occupancy[player] = 0
 
     def execute_move(self, move):
-        if move == "restart":
-            self.clear_board()
-            return
-        elif move == "undo":
-            self.undo_move(self.history.pop(-1))
-            return
-        elif self.explore:
-            self.history.append(move)
+        if self.explore:
+            if move == "restart":
+                self.clear_board()
+                return
+            elif move == "undo":
+                self.undo_move(self.history.pop(-1))
+                return
+            else:
+                self.history.append(move)
         r, c = move
         self.board[r][c] = self.player
         self.occupancy[self.player] = self.occupancy[self.player] | (1 << (r*self.columns + c))
         self.turn = (self.turn + 1) % len(self.players)
         self.player = self.players[self.turn]
+        self.changed()
 
     def undo_move(self, move):
         r, c = move
@@ -88,6 +94,7 @@ class TicTacToe(Rule):
         self.turn = (self.turn - 1) % len(self.players)
         self.player = self.players[self.turn]
         self.occupancy[self.player] = self.occupancy[self.player] & ~(1 << (r*self.columns + c))
+        self.changed()
 
     def winners(self):
         winners = []
@@ -98,7 +105,7 @@ class TicTacToe(Rule):
                     break
         return winners
 
-    def get_legal_moves(self):
+    def generate_legal_moves(self):
         legal = []
         if not self.winners():
             for r in range(self.rows):
@@ -110,54 +117,7 @@ class TicTacToe(Rule):
             legal.append("restart")
         return legal
 
-    def get_utility(self):
-        utility = {}
-        winners = self.winners()
-        if winners:
-            for player in self.players:
-                if player in winners:
-                    utility[player] = 1
-                else:
-                    utility[player] = -1
-        else:
-            for player in self.players:
-                utility[player] = 0
-        return utility
-
-
-class TicTacToeGUI(GameGUI):
-    def create_board(self, *args):
-        lbl_board = Label(self.frm_out, text="")
-        lbl_board.config(font=("Courier", 60))
-        lbl_board.pack(fill=BOTH, expand=True)
-        lbl_win = Label(self.frm_out, text="")
-        lbl_win.pack()
-        return lbl_board, lbl_win
-
-    def update_board(self, *args):
-        board = ""
-        for row in self.game.board:
-            for tile in row:
-                if tile:
-                    board = board + str(tile)
-                else:
-                    board = board + "-"
-                board = board + "|"
-            board = board + "\n"
-        self.board[0]["text"] = board
-
-        if self.game.winners():
-            self.board[1]["text"] = "Winner: " + str(self.game.winners())
-        elif not self.game.get_legal_moves():
-            self.board[1]["text"] = "Draw"
-        else:
-            self.board[1]["text"] = ""
-
 
 if __name__ == "__main__":
-    g = TicTacToe(rows=3, columns=3)
+    g = TicTacToe(rows=4, columns=4)
     print(g.win_masks)
-    print(g.winners())
-    start = default_timer()
-    print(g.max_n(-1, -1, 0, 0))
-    print(default_timer()-start)

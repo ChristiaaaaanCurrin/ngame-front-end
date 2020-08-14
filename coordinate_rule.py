@@ -7,8 +7,8 @@ class Tile(Rule):
         super().__init__(**kwargs)
         self.coords = coords
 
-    def __str__(self):
-        return str(self.coords)
+    def __repr__(self):
+        return 'Tile%s' % str(self.coords)
 
     def requirements(self):
         return {"get_coords": lambda x: ()}
@@ -16,7 +16,7 @@ class Tile(Rule):
     def get_coords(self):
         return self.coords
 
-    def get_legal_moves(self):
+    def generate_legal_moves(self):
         return []
 
     def execute_move(self, move):
@@ -25,13 +25,13 @@ class Tile(Rule):
     def undo_move(self, move):
         self.coords = move[1]
 
-    def get_utility(self):
-        return {self.player: 0}
-
 
 class CoordinateRule(Rule, ABC):
-    def __str__(self):
-        return str(self.name) + str(self.get_bottom_rule())
+    def __repr__(self):
+        if self.name:
+            return str(self.name) + str(self.get_coords())
+        else:
+            return str(type(self).__name__) + '(%s)' % self.sub_rule.__repr__()
 
     def get_coords(self):
         return self.get_bottom_rule().coords
@@ -47,9 +47,6 @@ class CoordinateRule(Rule, ABC):
 
     def undo_move(self, move):
         self.get_bottom_rule().undo_move(move)
-
-    def get_utility(self):
-        return {self.player: 0}
 
 
 # -- Pattern Rule -----------------------------------------
@@ -67,7 +64,7 @@ class PatternRule(CoordinateRule, ABC):
     def does_skip(self, coords):
         pass
 
-    def get_legal_moves(self):
+    def generate_legal_moves(self):
         edge = self.get_step(self.get_coords())
         checked = []
         legal = self.sub_rule.get_legal_moves()
@@ -86,8 +83,15 @@ class PatternRule(CoordinateRule, ABC):
 # -- Capture Rule -----------------------------------------
 
 class CaptureRule(Rule, ABC):
-    def __str__(self):
-        return str(self.name) + str(self.get_bottom_rule())
+    def __init__(self, **kwargs):
+        self.radar = []
+        super().__init__(**kwargs)
+
+    def __repr__(self):
+        if self.name:
+            return str(self.name) + str(self.get_coords())
+        else:
+            return str(type(self).__name__) + '(%s)' % self.sub_rule.__repr__()
 
     def requirements(self):
         return {"does_attack_piece": lambda x: False}
@@ -115,7 +119,7 @@ class CaptureRule(Rule, ABC):
             return False
 
     def is_attacked(self):
-        for piece in self.game_state.get_top_rules(*self.watch):
+        for piece in self.game_state.get_top_rules(*self.radar):
             if piece.does_attack_piece(self):
                 return True
         else:
@@ -125,31 +129,31 @@ class CaptureRule(Rule, ABC):
         sub_rule, sub_move, *pieces_to_capture = move
         [piece.game_state.remove_rules(piece) for piece in pieces_to_capture]
         sub_rule.execute_move(sub_move)
+        self.changed()
 
     def undo_move(self, move):
         sub_rule, sub_move, *pieces_to_capture = move
         sub_rule.undo_move(sub_move)
         [piece.game_state.add_rules(piece) for piece in pieces_to_capture]
+        self.changed()
 
 
 class SimpleCapture(CaptureRule):
-    def get_legal_moves(self):
+    def generate_legal_moves(self):
         legal = []
         for new_coords, old_coords, *sub_captures in self.sub_rule.get_legal_moves():
             to_capture = []
-            for top_rule in self.game_state.get_top_rules(*self.watch):
+            for top_rule in self.game_state.get_top_rules(*self.radar):
                 if top_rule.get_bottom_rule().coords == new_coords:
                     to_capture.append(top_rule)
             legal.append((self.sub_rule, (new_coords, old_coords), *to_capture, *sub_captures))
         return legal
 
-    def get_utility(self):
-        return {self.player: 1}
-
 
 class NoCapture(CaptureRule):
-    def get_legal_moves(self):
+    def generate_legal_moves(self):
         return self.sub_rule.get_legal_moves()
 
-    def get_utility(self):
-        return {self.player: 1}
+
+if __name__ == "__main__":
+    pass

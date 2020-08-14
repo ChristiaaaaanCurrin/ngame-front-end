@@ -1,10 +1,18 @@
-class GameState:
+from event import Event, Subscriber
+
+
+class GameState(Subscriber):
     def __init__(self, **kwargs):
+        super().__init__()
         self.top_rules = {}
+        self.changed = Event()
         self.__dict__.update(kwargs)
 
-    def __str__(self):
-        return str(self.top_rules)
+    def handle_event(self, *args, **kwargs):
+        self.changed()
+
+    def __repr__(self):
+        return 'GameState%s' % str(self.__dict__)
 
     def __getitem__(self, item):
         state = self
@@ -19,12 +27,12 @@ class GameState:
             start, *keys = keys
             top_rules = self.top_rules[start]
             for key in keys:
-                for rule in top_rules:
-                    if key not in rule.keys:
-                        top_rules.remove(rule)
+                top_rules = filter(lambda r: key in r.keys, top_rules)
             return top_rules
         else:
-            return self.top_rules
+            top_rules = []
+            [top_rules.extend(rules) for rules in self.top_rules.values()]
+            return top_rules
 
     def get_top_rules(self, *keys):
         top_rules = []
@@ -46,16 +54,27 @@ class GameState:
         return all_rules
 
     def add_rules(self, *rules):
-        for rule in rules:
-            for key in rule.keys:
+        self.subscribe(*[rule.changed for rule in rules])
+        for top_rule in rules:
+            for key in top_rule.keys:
                 if key in self.top_rules:
-                    self.top_rules[key].append(rule)
+                    self.top_rules[key].append(top_rule)
                 else:
-                    self.top_rules.update({key: [rule]})
+                    self.top_rules.update({key: [top_rule]})
+                for rule in top_rule.get_piece():
+                    rule.game_state = self
+                    rule.subscribe(self.changed)
+        self.changed()
 
     def remove_rules(self, *rules):
+        self.unsubscribe(*[rule.changed for rule in rules])
         for rule in rules:
             for key in rule.keys:
                 if key in self.top_rules:
                     while rule in self.top_rules[key]:
                         self.top_rules[key].remove(rule)
+        self.changed()
+
+
+if __name__ == "__main__":
+    pass

@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
+from event import Subscriber
 from random import sample, random
 
 
-class Evaluator(ABC):
+class Evaluator(Subscriber, ABC):
     def __init__(self, **kwargs):
         self.__dict__.update(**kwargs)
+        super().__init__()
 
     @abstractmethod
     def evaluate(self, game):
@@ -41,6 +43,19 @@ class Evaluator(ABC):
                 utilities.append(self.explore(depth - 1, width, temp))
                 game.undo_move(move)
             return max_by_key(player, utilities)
+
+
+class ZeroSum(Evaluator):
+    def __init__(self, *utility_funcs, **kwargs):
+        self.utilities = utility_funcs
+        super().__init__(**kwargs)
+
+    def evaluate(self, game):
+        utility = {}
+        for func in self.utilities:
+            utility.update(func(game))
+
+
 
 
 def max_by_key(key, dictionaries):
@@ -128,3 +143,7 @@ def neural_net_training_data(game, game_state, n_max_depth, batch_size):
     return training_data  # don't forget to return
 
 '''
+
+
+if __name__ == "__main__":
+    pass
