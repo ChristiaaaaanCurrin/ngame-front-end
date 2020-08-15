@@ -21,9 +21,11 @@ class Tile(Rule):
 
     def execute_move(self, move):
         self.coords = move[0]
+        self.changed()
 
     def undo_move(self, move):
         self.coords = move[1]
+        self.changed()
 
 
 class CoordinateRule(Rule, ABC):
@@ -44,9 +46,11 @@ class CoordinateRule(Rule, ABC):
 
     def execute_move(self, move):
         self.get_bottom_rule().execute_move(move)
+        self.changed()
 
     def undo_move(self, move):
         self.get_bottom_rule().undo_move(move)
+        self.changed()
 
 
 # -- Pattern Rule -----------------------------------------
@@ -65,9 +69,9 @@ class PatternRule(CoordinateRule, ABC):
         pass
 
     def generate_legal_moves(self):
+        legal = self.sub_rule.get_legal_moves()
         edge = self.get_step(self.get_coords())
         checked = []
-        legal = self.sub_rule.get_legal_moves()
         while edge:
             new_edge = []
             for coords in edge:
