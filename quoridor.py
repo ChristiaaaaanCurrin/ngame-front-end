@@ -1,4 +1,3 @@
-from enum import Enum
 from rule import SimpleTurn, Rule, piece
 from game_state import GameState
 from coordinate_rule import Tile, PatternRule
@@ -17,6 +16,16 @@ class QuoridorPlayer(Rule):
         self.side = side % 4
         self.goal = goal
         self.walls = walls
+
+    def path_find(self, pawn):
+        pawn.path_finder = True
+        for coord, old_coord in pawn.generate_legal_moves():
+            if coord in self.goal:
+                pawn.path_finder = False
+                return True
+        else:
+            pawn.path_finder = True
+            return False
 
     def generate_legal_moves(self):
         legal = []
@@ -53,13 +62,13 @@ class Pawn(PatternRule):
         legal = []
         r, c = coords
         for n in (-1, 1):
-            if 0 <= r + n < self.game_state.columns:
+            if 0 <= r + n < self.game_state.rows:
                 for wall in self.game_state.filter_top_rules(Key.WALL):
                     if (r + (n - 1)//2, c, 1) == wall.get_coords() or (r + (n - 1)//2, c - 1, 1) == wall.get_coords():
                         break
                 else:
                     legal.append((r + n, c))
-            if 0 <= c + n < self.game_state.rows:
+            if 0 <= c + n < self.game_state.columns:
                 for wall in self.game_state.filter_top_rules(Key.WALL):
                     if (r, c + (n - 1)//2, 0) == wall.get_coords() or (r - 1, c + (n - 1)//2, 0) == wall.get_coords():
                         break
@@ -96,17 +105,31 @@ class Wall(Tile):
                           or wall.coords == ((row - (orientation ^ 1)), column - orientation, orientation):
                             break
                     else:
-                        legal.append((row, column, orientation))
+                        blocks = False
+                        self.execute_move(coords)
+                        for player in self.game_state.filter_top_rules(Key.PLAYER):
+                            for pawn in self.game_state.filter_top_rules(Key.PAWN, player.player):
+                                if not player.path_find(pawn):
+                                    blocks = True
+                                    break
+                            else:
+                                continue
+                            break
+                        self.undo_move(coords)
+                        if not blocks:
+                            legal.append(coords)
         return legal
 
     def execute_move(self, move):
-        self.coords = move
+        if move:
+            self.coords = move
         self.game_state.add_rules(self)
         self.changed()
 
     def undo_move(self, move):
-        self.coords = ()
-        self.game_state.add_rules(self)
+        if move:
+            self.coords = ()
+        self.game_state.remove_rules(self)
         self.changed()
 
 
@@ -120,7 +143,7 @@ def quoridor(num_players=2, total_walls=20, rows=9, columns=9):
         player = QuoridorPlayer(side=side, player='p' + str(side + 1), name='p' + str(side + 1),
                                 walls=total_walls//num_players, keys=[Key.PLAYER], goal=goal)
         players.append(player)
-        position = ((0, columns//2), (rows-1, columns//2), (0, rows//2), (columns-1, rows//2))[player.side]
+        position = ((0, columns//2), (rows-1, columns//2), (rows//2, 0), (rows//2, columns-1))[player.side]
         pawns.append(piece(Pawn(), Tile(*position), keys=(Key.PAWN, player.player), player=player.player))
 
     game = SimpleTurn(*players, keys=[Key.DEFAULT])
@@ -130,11 +153,16 @@ def quoridor(num_players=2, total_walls=20, rows=9, columns=9):
 
 
 if __name__ == "__main__":
-    test_game = quoridor()
-    pl1 = test_game.game_state.filter_top_rules(Key.PLAYER)[0]
-    p1 = test_game.game_state.filter_top_rules(Key.PAWN)[0]
-    p2 = test_game.game_state.filter_top_rules(Key.PAWN)[1]
-    print(p1)
+    test_game = quoridor(rows=2, columns=2, num_players=2)
+    vs = test_game.game_state.filter_top_rules(Key.PAWN)
+    ps = test_game.game_state.filter_top_rules(Key.PLAYER)
+    ws = [Wall(game_state=test_game.game_state, keys=[Key.WALL]) for n in range(5)]
+    print(vs)
+    [print(p.goal) for p in ps]
+    print(ws[0].get_legal_moves())
+    ws[0].execute_move(((0, 0, 0), ()))
+    print(vs[0].get_legal_moves())
+    print(test_game.game_state)
 
 
 """

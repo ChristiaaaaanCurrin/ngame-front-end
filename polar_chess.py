@@ -1,7 +1,12 @@
 from game_state import GameState
 from rule import piece, SimpleTurn, Rule
 from coordinate_rule import SimpleCapture, Tile, PatternRule
-from timeit import default_timer
+
+
+class Key:
+    DEFAULT = 0
+    PLAYER = 1
+    PIECE = 2
 
 
 class ChessPlayer(Rule):
@@ -16,7 +21,7 @@ class ChessPlayer(Rule):
 
     def generate_legal_moves(self):
         legal = []
-        for top_rule in self.game_state.filter_top_rules(self.player, "piece"):
+        for top_rule in self.game_state.filter_top_rules(self.player, Key.PIECE):
             for move in top_rule.get_legal_moves():
                 top_rule.execute_move(move)
                 if not self.is_in_check():
@@ -172,8 +177,8 @@ class DiagonalMove(PatternRule):
 
 
 def lion(game_state, player, *coords, **kwargs):
-    kwargs = {'game_state': game_state, 'keys': ('piece', player),
-              'player': player, 'name': 'L' + str(player), 'radar': ['piece'],
+    kwargs = {'game_state': game_state, 'keys': (Key.PIECE, player),
+              'player': player, 'name': 'L' + str(player), 'radar': [Key.PIECE],
               'subscriptions': [game_state.changed], **kwargs}
     return piece(SimpleCapture(),
                  RadialMove(1, False),
@@ -184,8 +189,8 @@ def lion(game_state, player, *coords, **kwargs):
 
 
 def leopard(game_state, player, *coords, **kwargs):
-    kwargs = {'game_state': game_state, 'keys': ('piece', player),
-              'player': player, 'name': 'P' + str(player), 'radar': ['piece'],
+    kwargs = {'game_state': game_state, 'keys': (Key.PIECE, player),
+              'player': player, 'name': 'P' + str(player), 'radar': [Key.PIECE],
               'subscriptions': [game_state.changed], **kwargs}
     return piece(SimpleCapture(),
                  RadialMove(),
@@ -194,8 +199,8 @@ def leopard(game_state, player, *coords, **kwargs):
 
 
 def bear(game_state, player, *coords, **kwargs):
-    kwargs = {'game_state': game_state, 'keys': ('piece', player),
-              'player': player, 'name': 'B' + str(player), 'radar': ['piece'],
+    kwargs = {'game_state': game_state, 'keys': (Key.PIECE, player),
+              'player': player, 'name': 'B' + str(player), 'radar': [Key.PIECE],
               'subscriptions': [game_state.changed], **kwargs}
     return piece(SimpleCapture(),
                  AngularMove(),
@@ -204,8 +209,8 @@ def bear(game_state, player, *coords, **kwargs):
 
 
 def tiger(game_state, player, *coords, **kwargs):
-    kwargs = {'game_state': game_state, 'keys': ('piece', player),
-              'player': player, 'name': 'T' + str(player), 'radar': ['piece'],
+    kwargs = {'game_state': game_state, 'keys': (Key.PIECE, player),
+              'player': player, 'name': 'T' + str(player), 'radar': [Key.PIECE],
               'subscriptions': [game_state.changed], **kwargs}
     return piece(SimpleCapture(),
                  AngularMove(),
@@ -216,8 +221,8 @@ def tiger(game_state, player, *coords, **kwargs):
 
 
 def eagle(game_state, player, *coords, **kwargs):
-    kwargs = {'game_state': game_state, 'keys': ('piece', player),
-              'player': player, 'name': 'E'+str(player), 'radar': ['piece'],
+    kwargs = {'game_state': game_state, 'keys': (Key.PIECE, player),
+              'player': player, 'name': 'E'+str(player), 'radar': [Key.PIECE],
               'subscriptions': [game_state.changed], **kwargs}
     return piece(SimpleCapture(),
                  DiagonalMove(1, True, True, True),
@@ -237,8 +242,8 @@ def polar_chess(*piece_strings, rings=(1, 4, 12, 24, 24)):
     Ly = lion(state, 'y', 4, 1)
     Lb = lion(state, 'b', 1, 2)
 
-    y = ChessPlayer(Ly, name='y', player='y', keys=['state', 'y'])
-    b = ChessPlayer(Lb, name='b', player='b', keys=['state', 'b'])
+    y = ChessPlayer(Ly, name='y', player='y', keys=[Key.PLAYER, 'y'])
+    b = ChessPlayer(Lb, name='b', player='b', keys=[Key.PLAYER, 'b'])
 
     game = SimpleTurn(y, b)
 
@@ -252,7 +257,7 @@ def polar_chess(*piece_strings, rings=(1, 4, 12, 24, 24)):
 if __name__ == "__main__":
     test_game = polar_chess("haha")
     print(test_game.game_state)
-    test_tiger = test_game.game_state.filter_top_rules('piece')[-2]
+    test_tiger = test_game.game_state.filter_top_rules(Key.PIECE)[-2]
     [print(test_game.move_to_string(move)) for move in test_game.get_legal_moves()]
 
 

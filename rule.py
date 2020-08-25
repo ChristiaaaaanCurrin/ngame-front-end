@@ -5,14 +5,22 @@ from event import Event, Subscriber
 
 class Rule(ABC, Subscriber):
     def __init__(self, **kwargs):
-        super().__init__()
-        self.changed = Event()
-        self.game_state = GameState()
-        self.keys = [0]
-        self.sub_rule = None
-        self.name = ""
-        self.player = None
-        self.legal = []
+        """
+        :param game_state: GameState, all rules in the same game should have the same game state
+        :param keys: dictionary key in self.game_state.top_rules
+        :param sub_rule: next rule in linked piece
+        :param name: string representation of rule
+        :param player: player who "owns" self
+        """
+        super().__init__()  # initiates rule as a subscriber
+        self.changed = Event()  # Event that broadcasts changes to self
+        self.game_state = GameState()  # all rules in the same game should have the same game state
+        self.keys = [0]  # keys determine how the rule is binned in the game state
+        # each key corresponds with a dictionary entry in self.game_state.top_rules
+        self.sub_rule = None  # the next rule in the linked "piece"
+        self.name = ""  # string representation of the rule
+        self.player = None  # player who "owns" self
+        self.legal = []  # stored list of legal moves according to self. this list is updated on subscribed events
         self.__dict__.update(kwargs)
         super().__init__(self.game_state.changed)
 
@@ -23,12 +31,18 @@ class Rule(ABC, Subscriber):
             return str(type(self).__name__) + '(%s)' % self.sub_rule.__repr__()
 
     def requirements(self):
+        """
+        :return: dictionary of attributes sought by self, keyed by attribute names
+        """
         requirements = {}
         if self.sub_rule:
             requirements.update(self.sub_rule.requirements())
         return requirements
 
     def minimal(self):
+        """
+        :return: custom type with the required attributes to interact with self
+        """
         return type('Minimal' + self.__name__, (object,), self.requirements())
 
     @abstractmethod
@@ -71,6 +85,15 @@ class Rule(ABC, Subscriber):
         """
         return str(move)
 
+    def get_piece(self):
+        """
+        :return: the linked list of sub_rules underneath self
+        """
+        if self.sub_rule:
+            return [self] + self.sub_rule.get_piece()
+        else:
+            return [self]
+
     def get_bottom_rule(self):
         """
         :return: last element of linked list of sub_rules ( =self.get_piece()[-1] )
@@ -81,6 +104,9 @@ class Rule(ABC, Subscriber):
             return self
 
     def get_player(self):
+        """
+        :return: the player who owns (and would control) self
+        """
         if self.player:
             return self.player
         elif self.sub_rule:
@@ -88,30 +114,32 @@ class Rule(ABC, Subscriber):
         else:
             return None
 
-    def get_piece(self):
-        """
-        :return: linked list of sub_rules
-        """
-        if self.sub_rule:
-            return [self] + self.sub_rule.get_piece()
-        else:
-            return [self]
-
 
 # -- Player and Turn Handlers -----------------------------
 
 class SimpleTurn(Rule):
     def __init__(self, *sub_rules, turn=0, **kwargs):
+        """
+        :param sub_rules: list of rules that this rule cycles through
+        :param turn: turn that this rule is on
+        :param kwargs: passed to Rule.__init__()
+        """
         self.sequence = sub_rules
         self.turn = turn % len(self.sequence)
         super().__init__(sub_rule=self.sequence[0], **kwargs)
 
     def get_piece(self):
+        """
+        This rule includes all its sub rules in its piece
+        """
         this_piece = [self]
         [this_piece.extend(sub_rule.get_piece()) for sub_rule in self.sequence]
         return this_piece
 
     def generate_legal_moves(self):
+        """
+        gets legal moves of current child
+        """
         legal = []
         for sub_move in self.sub_rule.get_legal_moves():
             legal.append((self.sub_rule, sub_move))
@@ -123,6 +151,10 @@ class SimpleTurn(Rule):
         return sub_rule.move_to_string(sub_move)
 
     def execute_move(self, move=None):
+        """
+        increments turn and updates current sub_rule, then asks sub_rule to execute sub_move
+        :param move: (sub_piece (piece to execute move), sub_move (move to be executed))
+        """
         self.turn = (self.turn + 1) % len(self.sequence)
         self.sub_rule = self.sequence[self.turn]
         if move:
@@ -131,6 +163,10 @@ class SimpleTurn(Rule):
         self.changed()
 
     def undo_move(self, move=None):
+        """
+        increments turn in reverse and updates current sub_rule, then asks sub_rule to undo sub_move
+        :param move: (sub_piece (piece to undo move), sub_move(move to be undone))
+        """
         if move:
             sub_rule, sub_move = move
             sub_rule.undo_move(sub_move)
@@ -142,6 +178,13 @@ class SimpleTurn(Rule):
 # -- Piece Creator Functions ------------------------------
 
 def piece(*rules, **kwargs):
+    """
+    arranges rules into a linked (by sub_rule attribute) list and sets attributes specified by kwargs to be the same
+    across all rules
+    :param rules: rules to be linked
+    :param kwargs: attributes for all rules in piece to share
+    :return: top rule of new piece
+    """
     kwargs = {**kwargs}
     for i, rule in enumerate(rules[:-1]):
         rule.sub_rule = rules[i+1]

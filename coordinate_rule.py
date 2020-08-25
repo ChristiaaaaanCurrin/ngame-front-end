@@ -21,11 +21,11 @@ class Tile(Rule):
 
     def execute_move(self, move):
         self.coords = move[0]
-        self.changed()
+        self.changed(move, undo=False)
 
     def undo_move(self, move):
         self.coords = move[1]
-        self.changed()
+        self.changed(move, undo=True)
 
 
 class CoordinateRule(Rule, ABC):
@@ -46,11 +46,11 @@ class CoordinateRule(Rule, ABC):
 
     def execute_move(self, move):
         self.get_bottom_rule().execute_move(move)
-        self.changed()
+        self.changed(move, undo=False)
 
     def undo_move(self, move):
         self.get_bottom_rule().undo_move(move)
-        self.changed()
+        self.changed(move, undo=True)
 
 
 # -- Pattern Rule -----------------------------------------
@@ -133,13 +133,13 @@ class CaptureRule(Rule, ABC):
         sub_rule, sub_move, *pieces_to_capture = move
         [piece.game_state.remove_rules(piece) for piece in pieces_to_capture]
         sub_rule.execute_move(sub_move)
-        self.changed()
+        self.changed(move, undo=False)
 
     def undo_move(self, move):
         sub_rule, sub_move, *pieces_to_capture = move
         sub_rule.undo_move(sub_move)
         [piece.game_state.add_rules(piece) for piece in pieces_to_capture]
-        self.changed()
+        self.changed(move, undo=True)
 
 
 class SimpleCapture(CaptureRule):

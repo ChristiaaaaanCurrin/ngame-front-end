@@ -10,6 +10,10 @@ class Evaluator(Subscriber, ABC):
 
     @abstractmethod
     def evaluate(self, game):
+        """
+        :param game: game to be evaluated
+        :return: evaluation of game, (dictionary of values keyed by players)
+        """
         pass
 
     def explore(self, game, depth, width=-1, temp=1, k=1):
@@ -56,8 +60,6 @@ class ZeroSum(Evaluator):
             utility.update(func(game))
 
 
-
-
 def max_by_key(key, dictionaries):
     """
     :param key: a key in the dictionary
@@ -69,6 +71,7 @@ def max_by_key(key, dictionaries):
         if dictionary[key] > current_max[key]:
             current_max = dictionary
     return current_max
+
 
 '''
 def max_n(game, max_depth):
@@ -143,7 +146,6 @@ def neural_net_training_data(game, game_state, n_max_depth, batch_size):
     return training_data  # don't forget to return
 
 '''
-
 
 if __name__ == "__main__":
     pass

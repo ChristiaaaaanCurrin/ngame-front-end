@@ -17,14 +17,19 @@ class TicTacToe(Rule):
         self.occupancy = {}
         super().__init__(player=players[turn], **kwargs)
 
-    def refresh_init(self):
         self.game_state.add_rules(self)
-        super().refresh_init()
 
         for player in self.players:
             self.occupancy[player] = 0
         self.board = [[None for c in range(self.columns)] for r in range(self.rows)]
+        self.generate_win_masks()
 
+    def generate_win_masks(self):
+        self.generate_row_masks()
+        self.generate_column_masks()
+        self.generate_diagonal_masks()
+
+    def generate_row_masks(self):
         row_mask = (1 << self.to_win) - 1
         for r in range(self.rows):
             self.win_masks.append(row_mask)
@@ -33,6 +38,7 @@ class TicTacToe(Rule):
                 self.win_masks.append(row_mask)
             row_mask = row_mask << self.to_win
 
+    def generate_column_masks(self):
         column_mask = 1
         for w in range(self.to_win - 1):
             column_mask = 1 | (column_mask << self.columns)
@@ -43,6 +49,7 @@ class TicTacToe(Rule):
                 self.win_masks.append(column_mask)
             column_mask = column_mask << 1
 
+    def generate_diagonal_masks(self):
         diagonal_mask = 1
         for w in range(self.to_win - 1):
             diagonal_mask = diagonal_mask | (diagonal_mask << (self.columns + 1))
@@ -119,5 +126,6 @@ class TicTacToe(Rule):
 
 
 if __name__ == "__main__":
-    g = TicTacToe(rows=4, columns=4)
-    print(g.win_masks)
+    g = TicTacToe(rows=3, columns=3)
+    print([bin(mask) for mask in g.win_masks])
+    print(g.get_legal_moves())
