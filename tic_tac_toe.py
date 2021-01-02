@@ -50,15 +50,16 @@ class TicTacToe(Rule):
             column_mask = column_mask << 1
 
     def generate_diagonal_masks(self):
+        """
         diagonal_mask = 1
         for w in range(self.to_win - 1):
-            diagonal_mask = diagonal_mask | (diagonal_mask << (self.columns + 1))
+            diagonal_mask = 1 | (diagonal_mask << (self.columns + 1))
         for r in range(self.rows - self.to_win + 1):
             for c in range(self.columns - self.to_win + 1):
                 self.win_masks.append(diagonal_mask)
                 diagonal_mask = diagonal_mask << 1
             diagonal_mask = diagonal_mask << self.to_win
-
+        """
         diagonal_mask = 1 << (self.columns - 1)
         for w in range(self.to_win - 1):
             diagonal_mask = diagonal_mask | (diagonal_mask << (self.columns - 1))
@@ -66,7 +67,7 @@ class TicTacToe(Rule):
             for c in range(self.columns - self.to_win + 1):
                 self.win_masks.append(diagonal_mask)
                 diagonal_mask = diagonal_mask >> 1
-            diagonal_mask = diagonal_mask << self.to_win
+            diagonal_mask = diagonal_mask << (2 * self.columns - self.to_win)
 
     def __str__(self):
         return '~Tic Tac Toe~'
@@ -121,11 +122,14 @@ class TicTacToe(Rule):
                         legal.append((r, c))
         if self.explore:
             legal.append("undo")
+
+
             legal.append("restart")
         return legal
 
 
 if __name__ == "__main__":
-    g = TicTacToe(rows=3, columns=3)
-    print([bin(mask) for mask in g.win_masks])
+    g = TicTacToe(rows=19, columns=19, to_win=3)
+    [print(bin(mask)) for mask in g.win_masks]
     print(g.get_legal_moves())
+    print()

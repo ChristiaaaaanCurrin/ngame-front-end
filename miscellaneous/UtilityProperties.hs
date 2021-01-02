@@ -37,14 +37,14 @@ minElem f (x:y:xs)
 
 
 --Compare to "max_n" in game_state.py. Haskell, I have missed you!
-max_n :: (Ord v, Num v, Move m s, GameState s p) => Utility s p v -> Game s m -> v -> s -> p -> v
+max_n :: (Ord v, Num v, Move m s, GameState s p, Integral d) => Utility s p v -> Game s m -> d -> s -> p -> v
 max_n u g 0 s p = u s p
 max_n u g d s p
   | null $ g s = u s p
   | otherwise  = maxElem ($ toMove s) [max_n u g (d-1) ns | ns <- [execute m s | m <- g s]] $ p 
 
 --Similar to max_n utility function is now player dependent (so different players evaluate the board differently)
-partisan_max_n :: (Ord v, Num v, Move m s, GameState s p) => (p -> Utility s p v) -> Game s m -> v -> s -> p -> v
+partisan_max_n :: (Ord v, Num v, Move m s, GameState s p, Integral d) => (p -> Utility s p v) -> Game s m -> d -> s -> p -> v
 partisan_max_n f g 0 s p = f (toMove s) s p
 partisan_max_n f g d s p
   | null $ g s = f (toMove s) s p
@@ -61,11 +61,11 @@ worstLine  u g p s = minElem (flip u p) [execute m s | m <- g s]
 
 --Scores the degree to which a UTILITY function is NEAR PREFERENTIAL according to a gold standard VALUE function (0 is perfect score)
 nearPref :: (Num v, Ord v, Move m s, GameState s p) => Utility s p v -> Utility s p v -> Game s m -> s -> v
-nearPref v u g s = square $ (1 + d) * (u s p) - 1
+nearPref v u g s = square $ (1 + fromInteger d) * (u s p) - 1
   where p = maxElem (v s) $ players s
         d
          | v s p /= v (worstLine v g p s) p = 0
-         | otherwise = head $ filter (\x -> v s p /= v (bestLine (max_n u g x) g p s) p) $ map fromInteger [1..]
+         | otherwise = head $ filter (\x -> v s p /= v (bestLine (max_n u g x) g p s) p) [1..]
 
 {-
 A UTILITY function is NEAR PREFERENTIAL if it encodes information about how deep of a max_n tree using the UTILITY is

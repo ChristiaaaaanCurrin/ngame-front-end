@@ -5,6 +5,7 @@ const Wrapper = styled.div`
     text-align: left;
     color: red;
     display: flex;
+    justify-content: space-around;
 `;
 
 export const GameBuilder: FunctionComponent = () => {
